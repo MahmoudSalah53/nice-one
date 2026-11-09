@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "Nice One",
+  "version": "2.2.0",
+  "description": "Voice agent embed for Nice One websites (niceonesa.com)",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "notifications",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "*://*.niceonesa.com/*",
+    "*://niceonesa.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.niceonesa.com/*", "*://niceonesa.com/*"],
+      "js": ["csp-remover.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://*.niceonesa.com/*", "*://niceonesa.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Nice One"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "embed-popup.js",
+        "fetch-proxy.js",
+        "iframe-wrapper.html",
+        "iframe-wrapper.js",
+        "page-automation.js"
+      ],
+      "matches": ["*://*.niceonesa.com/*", "*://niceonesa.com/*"]
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "csp_rules",
+        "enabled": true,
+        "path": "csp-rules.json"
+      }
+    ]
+  }
+}

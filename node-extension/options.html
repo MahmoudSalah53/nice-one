@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nice One - Options</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: #111111;
+        min-height: 100vh;
+        padding: 40px 20px;
+        color: #ededed;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 560px;
+        margin: 0 auto;
+      }
+
+      .header {
+        margin-bottom: 32px;
+        text-align: center;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #3ecf8e 0%, #2da06e 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+      }
+
+      .logo svg {
+        width: 28px;
+        height: 28px;
+        color: white;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #ededed;
+        margin-bottom: 8px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        color: #8f8f8f;
+      }
+
+      .card {
+        background: #1c1c1c;
+        border: 1px solid #2e2e2e;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #ededed;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #a1a1a1;
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      input[type="url"] {
+        width: 100%;
+        padding: 12px 14px;
+        background: #0a0a0a;
+        border: 1px solid #2e2e2e;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #ededed;
+        transition: all 0.2s ease;
+        outline: none;
+      }
+
+      input[type="text"]:hover,
+      input[type="url"]:hover {
+        border-color: #3e3e3e;
+      }
+
+      input[type="text"]:focus,
+      input[type="url"]:focus {
+        border-color: #3ecf8e;
+        box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.15);
+      }
+
+      input[type="text"]::placeholder,
+      input[type="url"]::placeholder {
+        color: #4f4f4f;
+      }
+
+      .help-text {
+        font-size: 12px;
+        color: #6f6f6f;
+        margin-top: 8px;
+      }
+
+      /* Toggle Switch */
+      .toggle-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .toggle-label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .toggle-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #ededed;
+      }
+
+      .toggle-description {
+        font-size: 12px;
+        color: #6f6f6f;
+      }
+
+      .toggle {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        cursor: pointer;
+      }
+
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #2e2e2e;
+        border-radius: 24px;
+        transition: all 0.3s ease;
+      }
+
+      .toggle-slider:before {
+        content: "";
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: #6f6f6f;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+      }
+
+      .toggle input:checked + .toggle-slider {
+        background: #3ecf8e;
+      }
+
+      .toggle input:checked + .toggle-slider:before {
+        transform: translateX(20px);
+        background: white;
+      }
+
+      /* Radio Group */
+      .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #2e2e2e;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .radio-option:hover {
+        border-color: #3e3e3e;
+        background: #141414;
+      }
+
+      .radio-option.selected {
+        border-color: #3ecf8e;
+        background: rgba(62, 207, 142, 0.05);
+      }
+
+      .radio-option input[type="radio"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #3e3e3e;
+        border-radius: 50%;
+        margin-top: 2px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      .radio-option input[type="radio"]:checked {
+        border-color: #3ecf8e;
+        background: #3ecf8e;
+        box-shadow: inset 0 0 0 3px #0a0a0a;
+      }
+
+      .radio-content {
+        flex: 1;
+      }
+
+      .radio-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #ededed;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .radio-description {
+        font-size: 12px;
+        color: #6f6f6f;
+        line-height: 1.4;
+      }
+
+      .badge {
+        background: linear-gradient(135deg, #3ecf8e 0%, #2da06e 100%);
+        color: #0a0a0a;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Button */
+      button[type="submit"] {
+        width: 100%;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, #3ecf8e 0%, #2da06e 100%);
+        color: #0a0a0a;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+      }
+
+      button[type="submit"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(62, 207, 142, 0.3);
+      }
+
+      button[type="submit"]:active {
+        transform: translateY(0);
+      }
+
+      /* Status Messages */
+      .status {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: none;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .status.success {
+        background: rgba(62, 207, 142, 0.1);
+        color: #3ecf8e;
+        border: 1px solid rgba(62, 207, 142, 0.2);
+      }
+
+      .status.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      /* Divider */
+      .divider {
+        height: 1px;
+        background: #2e2e2e;
+        margin: 20px 0;
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #2e2e2e;
+      }
+
+      .footer-text {
+        font-size: 12px;
+        color: #4f4f4f;
+      }
+
+      .footer-link {
+        color: #3ecf8e;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .footer-link:hover {
+        color: #5fe0a8;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #1c1c1c;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #3e3e3e;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #4e4e4e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zm0 14a5 5 0 0 1-5-5H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2a5 5 0 0 1-5 5z"
+            />
+          </svg>
+        </div>
+        <h1>Nice One</h1>
+        <p class="subtitle">Voice agent for Nice One websites (niceonesa.com)</p>
+      </div>
+
+      <form id="optionsForm">
+        <!-- Enable/Disable Card -->
+        <div class="card">
+          <div class="toggle-container">
+            <div class="toggle-label">
+              <span class="toggle-title">Enable Extension</span>
+              <span class="toggle-description"
+                >Toggle the voice agent on niceonesa.com pages</span
+              >
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="enabled" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Server Configuration Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Server Configuration</span>
+          </div>
+
+          <div class="form-group">
+            <label for="sandboxId">Server URL</label>
+            <input
+              type="text"
+              id="sandboxId"
+              placeholder="http://localhost:3000"
+              required
+            />
+            <div class="help-text">
+              The URL where your Nice One frontend is hosted
+            </div>
+          </div>
+
+          <div class="form-group" id="bundleUrlGroup" style="display: none">
+            <label for="bundleUrl">Bundle URL (Optional)</label>
+            <input
+              type="url"
+              id="bundleUrl"
+              placeholder="Leave empty to use server URL"
+            />
+            <div class="help-text">
+              Custom URL for embed-popup.js. Leave empty to use Server URL.
+            </div>
+          </div>
+        </div>
+
+        <button type="submit">Save Settings</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <div class="footer">
+        <p class="footer-text">
+          Nice One &bull;
+          <a href="#" class="footer-link" id="versionLink">v1.0.0</a>
+        </p>
+      </div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

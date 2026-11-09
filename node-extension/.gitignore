@@ -1,0 +1,15 @@
+# Extension bundle (should be copied from frontend build)
+embed-popup.js
+embed-popup.js.map
+page-automation.js
+page-automation.js.map
+
+# Chrome extension build artifacts
+*.crx
+*.pem
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+

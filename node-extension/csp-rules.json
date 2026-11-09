@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Content-Security-Policy", "operation": "remove" },
+        { "header": "content-security-policy", "operation": "remove" },
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "content-security-policy-report-only", "operation": "remove" },
+        { "header": "X-Content-Security-Policy", "operation": "remove" },
+        { "header": "X-WebKit-CSP", "operation": "remove" },
+        { "header": "Permissions-Policy", "operation": "remove" },
+        { "header": "permissions-policy", "operation": "remove" },
+        { "header": "Feature-Policy", "operation": "remove" },
+        { "header": "feature-policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "resourceTypes": ["main_frame", "sub_frame", "stylesheet", "script", "xmlhttprequest", "image", "font", "object", "media", "other"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 2,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Content-Security-Policy", "operation": "remove" },
+        { "header": "content-security-policy", "operation": "remove" },
+        { "header": "Permissions-Policy", "operation": "remove" },
+        { "header": "permissions-policy", "operation": "remove" },
+        { "header": "Feature-Policy", "operation": "remove" },
+        { "header": "feature-policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "regexFilter": ".*\\.gov\\.sa.*",
+      "resourceTypes": ["main_frame", "sub_frame", "stylesheet", "script", "xmlhttprequest", "image", "font", "object", "media", "other"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 3,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Permissions-Policy", "operation": "remove" },
+        { "header": "permissions-policy", "operation": "remove" },
+        { "header": "Feature-Policy", "operation": "remove" },
+        { "header": "feature-policy", "operation": "remove" },
+        { "header": "Content-Security-Policy", "operation": "remove" },
+        { "header": "content-security-policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "regexFilter": ".*sakani\\.sa.*",
+      "resourceTypes": ["main_frame", "sub_frame", "stylesheet", "script", "xmlhttprequest", "image", "font", "object", "media", "other"]
+    }
+  }
+]
