@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_DIR="/home/ubuntu/projects/noda-voice-front"
+APP_DIR="/home/ubuntu/projects/nice-one-frontend"
 
 cd "$APP_DIR"
 
