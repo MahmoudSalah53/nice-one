@@ -14,7 +14,7 @@ echo "⏳ Installing dependencies..."
 /usr/bin/pnpm run build
 
 echo "⏳ Restarting service..."
-sudo /usr/bin/systemctl restart noda-voice-front.service
+sudo /usr/bin/systemctl restart nice-one-frontend
 
 echo "✅ Deployment complete"
-#test
+
