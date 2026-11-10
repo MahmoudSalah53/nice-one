@@ -3,7 +3,7 @@ pipeline {
     environment {
         HOST = "187.124.20.36"
         USER = "ubuntu"
-        SCRIPT = "/home/ubuntu/projects/noda-voice-front/deploy.sh"
+        SCRIPT = "/home/ubuntu/projects/nice-one-frontend/deploy.sh"
     }
     stages {
         stage('Deploy') {
