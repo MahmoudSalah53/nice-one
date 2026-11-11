@@ -120,11 +120,13 @@ export const rpcHandlers = {
     try {
       const payload = parsePayload(data);
       console.log(`${logPrefix} Parsed payload:`, payload);
-      const jsid = payload?.jsid || payload;
+      const rawJsid = payload?.jsid ?? payload?.jsId ?? payload;
+      const jsid =
+        typeof rawJsid === "number" ? String(rawJsid) : rawJsid;
 
       if (!jsid || typeof jsid !== "string") {
         console.error(`${logPrefix} Invalid jsid provided:`, payload);
-        return createErrorResponse("Invalid jsid");
+        return createErrorResponse("Element not found");
       }
 
       console.log(
@@ -142,21 +144,21 @@ export const rpcHandlers = {
 
       if (result.success) {
         console.log("Button click successful for jsid:", jsid);
-        return createSuccessResponse({ jsid });
+        return createSuccessResponse({});
       } else {
         console.error("Button click failed for jsid:", jsid);
-        return createErrorResponse(
-          result.error || "Button not found or click failed",
-        );
+        const errMsg =
+          result.error === "Button is disabled"
+            ? "Button is disabled"
+            : "Element not found";
+        return createErrorResponse(errMsg);
       }
     } catch (error) {
       console.error(
         `${logPrefix} Error processing click_button RPC call:`,
         error,
       );
-      return createErrorResponse(
-        error instanceof Error ? error.message : String(error),
-      );
+      return createErrorResponse("Element not found");
     }
   },
 
@@ -764,76 +766,121 @@ export const rpcHandlers = {
 
   add_to_cart: async (data: { payload?: string | unknown }) => {
     const logPrefix = "[ADD TO CART RPC]";
-    console.log(`${logPrefix} 🔵 add_to_cart RPC handler called!`);
-    console.log(`${logPrefix} RPC data received:`, data);
+    console.log(`${logPrefix} 🔵 add_to_cart RPC handler called!`, data);
 
     try {
-      const payload = parsePayload(data);
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
       console.log(`${logPrefix} Parsed payload:`, payload);
 
-      const quantity = payload?.quantity || payload?.qty;
-      const warranty_index =
-        payload?.warranty_index !== undefined
-          ? payload.warranty_index
-          : payload?.warranty;
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "add_to_cart", payload }),
+      });
 
-      if (!quantity || typeof quantity !== "string") {
-        console.error(`${logPrefix} Invalid quantity provided:`, payload);
-        return createErrorResponse("Invalid quantity");
-      }
-
-      if (
-        warranty_index !== undefined &&
-        warranty_index !== null &&
-        typeof warranty_index !== "number"
-      ) {
-        console.error(`${logPrefix} Invalid warranty_index provided:`, payload);
-        return createErrorResponse("Invalid warranty_index");
-      }
-
-      const resolvedWarrantyIndex =
-        typeof warranty_index === "number" ? warranty_index : -1;
-
-      console.log(
-        `${logPrefix} ✅ Received add_to_cart RPC call quantity="${quantity}", warranty_index=${resolvedWarrantyIndex}`,
-      );
-
-      await new Promise((r) => setTimeout(r, 1000));
-
-      const result = await executeAction(
-        "add_to_cart",
-        { quantity: quantity || "1", warranty_index: resolvedWarrantyIndex },
-        () => {
-          if (typeof SiteAutomation.add_to_cart !== "function") {
-            console.error("SiteAutomation.add_to_cart method not found");
-            return false;
-          }
-          return (SiteAutomation.add_to_cart as (q: string, w?: number) => boolean)(
-            quantity,
-            resolvedWarrantyIndex,
-          );
-        },
-      );
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
 
       if (result.success) {
-        console.log(
-          `${logPrefix} Add to cart successful quantity="${quantity}", warranty_index=${resolvedWarrantyIndex}`,
-        );
-        return createSuccessResponse({
-          quantity,
-          warranty_index: resolvedWarrantyIndex,
-        });
-      } else {
-        console.error(
-          `${logPrefix} Add to cart FAILED quantity="${quantity}", warranty_index=${resolvedWarrantyIndex}`,
-        );
-        return createErrorResponse(result.error || "Add to cart failed");
+        // Trigger live cart badge / store refresh in the host shell & iframe without navigating
+        executeAction("refresh_store", { type: "cart" }, () => {
+          const win = window as unknown as { __niceoneRefreshStore?: () => void };
+          win.__niceoneRefreshStore?.();
+          return true;
+        }).catch(() => {});
       }
+
+      return JSON.stringify(result);
+    } catch (error) {
+      console.error(`${logPrefix} Error processing add_to_cart RPC:`, error);
+      return createErrorResponse(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  },
+
+  add_to_favourites: async (data: { payload?: string | unknown }) => {
+    const logPrefix = "[ADD TO FAVOURITES RPC]";
+    console.log(`${logPrefix} 🔵 add_to_favourites RPC handler called!`, data);
+
+    try {
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
+      console.log(`${logPrefix} Parsed payload:`, payload);
+
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "add_to_favourites", payload }),
+      });
+
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
+
+      if (result.success) {
+        // Trigger live wishlist badge / heart refresh in the host shell & iframe without navigating
+        executeAction("refresh_store", { type: "wishlist" }, () => {
+          const win = window as unknown as { __niceoneRefreshStore?: () => void };
+          win.__niceoneRefreshStore?.();
+          return true;
+        }).catch(() => {});
+      }
+
+      return JSON.stringify(result);
     } catch (error) {
       console.error(
-        `${logPrefix} Error processing add_to_cart RPC call:`,
+        `${logPrefix} Error processing add_to_favourites RPC:`,
         error,
       );
+      return createErrorResponse(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  },
+
+  get_cart: async (data: { payload?: string | unknown }) => {
+    const logPrefix = "[GET CART RPC]";
+    console.log(`${logPrefix} 🔵 get_cart RPC handler called!`, data);
+
+    try {
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "get_cart", payload }),
+      });
+
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
+      return JSON.stringify(result);
+    } catch (error) {
+      console.error(`${logPrefix} Error processing get_cart RPC:`, error);
+      return createErrorResponse(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  },
+
+  get_favourites: async (data: { payload?: string | unknown }) => {
+    const logPrefix = "[GET FAVOURITES RPC]";
+    console.log(`${logPrefix} 🔵 get_favourites RPC handler called!`, data);
+
+    try {
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "get_favourites", payload }),
+      });
+
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
+      return JSON.stringify(result);
+    } catch (error) {
+      console.error(`${logPrefix} Error processing get_favourites RPC:`, error);
       return createErrorResponse(
         error instanceof Error ? error.message : String(error),
       );

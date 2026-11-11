@@ -58,8 +58,29 @@ function executeAction(
   try {
     switch (action) {
       case "click_button": {
-        const success = SiteAutomation.click_button(data.jsId as string);
-        return { success, error: success ? undefined : "Element not found" };
+        const jsId = data.jsId as string;
+        const success = SiteAutomation.click_button(jsId);
+        if (success) return { success: true };
+        const lastErr = (
+          SiteAutomation as unknown as { lastError?: string }
+        ).lastError;
+        return {
+          success: false,
+          error:
+            lastErr === "Button is disabled"
+              ? "Button is disabled"
+              : "Element not found",
+        };
+      }
+
+      case "refresh_store": {
+        const win = window as unknown as {
+          __niceoneRefreshStore?: () => void;
+        };
+        if (typeof win.__niceoneRefreshStore === "function") {
+          win.__niceoneRefreshStore();
+        }
+        return { success: true };
       }
 
       case "fill_input": {
@@ -467,12 +488,19 @@ function createIframeEmbed(): void {
         );
       }
 
-      // After action, send updated DOM after a delay
+      // After action, send updated DOM after a delay (and a second pass for async route/hydration updates)
       setTimeout(() => {
         const domData = collectDOM();
         lastDOMSnapshot = domData;
         sendDOMToIframe(domData);
-      }, 500);
+      }, 450);
+      if (action === "navigate" || action === "click_button") {
+        setTimeout(() => {
+          const domData = collectDOM();
+          lastDOMSnapshot = domData;
+          sendDOMToIframe(domData);
+        }, 1400);
+      }
     }
 
     // Handle popup open request from iframe (for script tag mode - trigger is in iframe)
@@ -577,8 +605,22 @@ function init(): void {
     setUrlChangeCallback(handleUrlChange);
   }
 
-  // Initialize message handler (for extension mode communication)
-  window.addEventListener("message", handleMessage);
+  // Initialize message handler (for extension mode communication + niceone-frame-load updates)
+  window.addEventListener("message", (event: MessageEvent) => {
+    handleMessage(event);
+    if (event.data && event.data.type === "niceone-frame-load" && isScriptTagMode) {
+      setTimeout(() => {
+        const domData = collectDOM();
+        lastDOMSnapshot = domData;
+        sendDOMToIframe(domData);
+      }, 350);
+      setTimeout(() => {
+        const domData = collectDOM();
+        lastDOMSnapshot = domData;
+        sendDOMToIframe(domData);
+      }, 1200);
+    }
+  });
 
   // Get initial DOM snapshot
   lastDOMSnapshot = collectDOM();

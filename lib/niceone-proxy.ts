@@ -200,6 +200,15 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
                 currentFrameLoc.hash = targetHash;
                 return true;
               }
+              if (
+                frame.contentWindow &&
+                typeof frame.contentWindow.__niceoneSpaNavigate === "function"
+              ) {
+                var spaOk = frame.contentWindow.__niceoneSpaNavigate(cleanUrl);
+                if (spaOk) {
+                  return true;
+                }
+              }
             } catch (e) {}
 
             frame.src = toFrameUrl(targetPath, targetSearch, targetHash);
@@ -212,6 +221,18 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
       };
 
       window.__alawalyLiveNavigate = window.__niceoneLiveNavigate;
+
+      window.__niceoneRefreshStore = function () {
+        try {
+          if (frame && frame.contentWindow) {
+            if (typeof frame.contentWindow.__niceoneRefreshStore === "function") {
+              frame.contentWindow.__niceoneRefreshStore();
+            } else {
+              frame.contentWindow.postMessage({ type: "niceone-refresh-store" }, "*");
+            }
+          }
+        } catch (e) {}
+      };
 
       window.addEventListener("message", function (event) {
         if (!event.data || !event.data.type) return;
@@ -374,6 +395,59 @@ function transformNiceOneHtml(
     window.addEventListener("load", notifyParent);
     window.addEventListener("hashchange", notifyParent);
     window.addEventListener("popstate", notifyParent);
+
+    // 5. Client-side SPA navigation via Nuxt Vue Router + live Cart/Wishlist store refresh
+    function getVueApp() {
+      var nuxtEl = document.getElementById("__nuxt");
+      return (nuxtEl && nuxtEl.__vue_app__) || (window.__NUXT__ && window.__NUXT__.vueApp) || null;
+    }
+
+    window.__niceoneSpaNavigate = function (targetUrl) {
+      try {
+        var curLang = (window.location.pathname.split("/")[1] || "").toLowerCase();
+        var nextLang = (targetUrl.split("?")[0].split("#")[0].split("/")[1] || "").toLowerCase();
+        if (curLang && nextLang && curLang !== nextLang) {
+          return false;
+        }
+        var app = getVueApp();
+        var router = app && app.config && app.config.globalProperties && app.config.globalProperties.$router;
+        if (router && typeof router.push === "function") {
+          Promise.resolve(router.push(targetUrl)).then(function () {
+            setTimeout(notifyParent, 80);
+            setTimeout(notifyParent, 400);
+          }).catch(function () {});
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    };
+
+    window.__niceoneRefreshStore = function () {
+      try {
+        var app = getVueApp();
+        if (app && app._context && app._context.provides) {
+          var provides = app._context.provides;
+          var keys = Object.getOwnPropertyNames(provides).concat(
+            typeof Object.getOwnPropertySymbols === "function"
+              ? Object.getOwnPropertySymbols(provides)
+              : []
+          );
+          for (var i = 0; i < keys.length; i++) {
+            var val = provides[keys[i]];
+            if (val && typeof val.invalidateQueries === "function") {
+              val.invalidateQueries({ queryKey: ["cart"] });
+              val.invalidateQueries({ queryKey: ["wishlist"] });
+            }
+          }
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("message", function (ev) {
+      if (ev.data && ev.data.type === "niceone-refresh-store") {
+        window.__niceoneRefreshStore();
+      }
+    });
 
     // Fallback: if this page is ever rendered at top-level directly, ensure Voice Agent is injected
     if (window.self === window.top) {

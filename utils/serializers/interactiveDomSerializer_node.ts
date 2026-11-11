@@ -243,8 +243,11 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
     if (el.getAttribute("aria-hidden") === "true") return true;
 
     // Check computed styles
-    if (typeof window !== "undefined" && window.getComputedStyle) {
-      const styles = window.getComputedStyle(el);
+    const view =
+      el.ownerDocument?.defaultView ||
+      (typeof window !== "undefined" ? window : null);
+    if (view && typeof view.getComputedStyle === "function") {
+      const styles = view.getComputedStyle(el);
       if (styles.visibility === "hidden" || styles.display === "none") {
         return true;
       }
@@ -430,6 +433,9 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
       }
     }
 
+    const ownerDoc =
+      el.ownerDocument || (typeof document !== "undefined" ? document : null);
+
     // Check existing attribute
     const existingAttr = el.getAttribute("data-js-id");
     if (existingAttr) {
@@ -440,8 +446,8 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
       } else if (mappedElement && mappedElement !== el) {
         el.removeAttribute("data-js-id");
       } else {
-        if (typeof document !== "undefined") {
-          const elementsWithId = document.querySelectorAll(
+        if (ownerDoc) {
+          const elementsWithId = ownerDoc.querySelectorAll(
             `[data-js-id="${existingAttr}"]`,
           );
           if (elementsWithId.length === 1 && elementsWithId[0] === el) {
@@ -468,8 +474,8 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
 
       if (this._reverseIdMap.has(newId)) continue;
 
-      if (typeof document !== "undefined") {
-        const existingElements = document.querySelectorAll(
+      if (ownerDoc) {
+        const existingElements = ownerDoc.querySelectorAll(
           `[data-js-id="${newId}"]`,
         );
         if (existingElements.length > 0) continue;
@@ -492,7 +498,8 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
     const idsToRemove: string[] = [];
 
     this._reverseIdMap.forEach((element, id) => {
-      if (!document.contains(element)) {
+      const ownerDoc = element.ownerDocument || document;
+      if (!ownerDoc.contains(element)) {
         idsToRemove.push(id);
         this._idMap.delete(element);
       }
@@ -868,6 +875,9 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
       // Handle iframes
       const tag = el.tagName.toLowerCase();
       if (tag === "iframe") {
+        if (el.id === "lk-embed-iframe") {
+          return;
+        }
         try {
           const iframe = el as HTMLIFrameElement;
           const iframeDoc =
@@ -963,13 +973,62 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
     const allInteractiveElements =
       this._collectAllInteractiveElementsInOrder(root);
 
+    let resolvedUrl: string | null = null;
+    let resolvedTitle: string | null =
+      typeof document !== "undefined" ? document.title || null : null;
+
+    if (typeof window !== "undefined") {
+      try {
+        const liveFrame = document.getElementById(
+          "niceone-live-frame",
+        ) as HTMLIFrameElement | null;
+        if (liveFrame) {
+          const frameDoc =
+            liveFrame.contentDocument || liveFrame.contentWindow?.document;
+          if (frameDoc?.title) {
+            resolvedTitle = frameDoc.title.trim() || resolvedTitle;
+          }
+          const frameLoc = liveFrame.contentWindow?.location;
+          if (
+            frameLoc &&
+            frameLoc.pathname &&
+            frameLoc.pathname !== "blank" &&
+            !frameLoc.href.startsWith("about:")
+          ) {
+            const sp = new URLSearchParams(frameLoc.search || "");
+            sp.delete("__frame");
+            const cleanSearch = sp.toString() ? `?${sp.toString()}` : "";
+            resolvedUrl = `https://niceonesa.com${frameLoc.pathname}${cleanSearch}${frameLoc.hash || ""}`;
+          }
+        }
+      } catch {
+        // Ignore cross-origin or access error
+      }
+
+      const winWithUrl = window as unknown as { __niceoneCurrentUrl?: string };
+      if (!resolvedUrl && winWithUrl.__niceoneCurrentUrl) {
+        resolvedUrl = winWithUrl.__niceoneCurrentUrl;
+      }
+
+      if (!resolvedUrl && window.location) {
+        const sp = new URLSearchParams(window.location.search || "");
+        sp.delete("__frame");
+        const cleanSearch = sp.toString() ? `?${sp.toString()}` : "";
+        if (
+          window.location.pathname.startsWith("/ar") ||
+          window.location.pathname.startsWith("/en")
+        ) {
+          resolvedUrl = `https://niceonesa.com${window.location.pathname}${cleanSearch}${window.location.hash || ""}`;
+        } else {
+          resolvedUrl = window.location.href;
+        }
+      }
+    }
+
     return {
-      ts: new Date().toISOString(),
-      url:
-        typeof window !== "undefined" && window.location
-          ? window.location.href
-          : null,
-      title: typeof document !== "undefined" ? document.title || null : null,
+      ts: String(Date.now()),
+      url: resolvedUrl,
+      title: resolvedTitle,
       nIntr: allInteractiveElements.length,
       interactiveElements: allInteractiveElements,
     };

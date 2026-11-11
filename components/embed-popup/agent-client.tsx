@@ -244,6 +244,27 @@ function AgentClient({ appConfig }: EmbedFixedAgentClientProps) {
   useRpcMethod({
     room,
     popupOpen,
+    methodName: "add_to_favourites",
+    handler: rpcHandlers.add_to_favourites,
+  });
+
+  useRpcMethod({
+    room,
+    popupOpen,
+    methodName: "get_cart",
+    handler: rpcHandlers.get_cart,
+  });
+
+  useRpcMethod({
+    room,
+    popupOpen,
+    methodName: "get_favourites",
+    handler: rpcHandlers.get_favourites,
+  });
+
+  useRpcMethod({
+    room,
+    popupOpen,
     methodName: "checkout",
     handler: rpcHandlers.checkout,
   });
