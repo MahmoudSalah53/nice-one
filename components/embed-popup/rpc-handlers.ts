@@ -887,6 +887,81 @@ export const rpcHandlers = {
     }
   },
 
+  remove_from_cart: async (data: { payload?: string | unknown }) => {
+    const logPrefix = "[REMOVE FROM CART RPC]";
+    console.log(`${logPrefix} 🔵 remove_from_cart RPC handler called!`, data);
+
+    try {
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "remove_from_cart", payload }),
+      });
+
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
+
+      if (result.success) {
+        executeAction("refresh_store", { type: "cart" }, () => {
+          const win = window as unknown as { __niceoneRefreshStore?: () => void };
+          win.__niceoneRefreshStore?.();
+          return true;
+        }).catch(() => {});
+      }
+
+      return JSON.stringify(result);
+    } catch (error) {
+      console.error(
+        `${logPrefix} Error processing remove_from_cart RPC:`,
+        error,
+      );
+      return createErrorResponse(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  },
+
+  remove_from_favourites: async (data: { payload?: string | unknown }) => {
+    const logPrefix = "[REMOVE FROM FAVOURITES RPC]";
+    console.log(
+      `${logPrefix} 🔵 remove_from_favourites RPC handler called!`,
+      data,
+    );
+
+    try {
+      const payload = (parsePayload(data) || {}) as Record<string, unknown>;
+      const res = await fetch("/api/niceone-rpc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "remove_from_favourites", payload }),
+      });
+
+      const result = (await res.json()) as Record<string, unknown>;
+      console.log(`${logPrefix} API result:`, result);
+
+      if (result.success) {
+        executeAction("refresh_store", { type: "wishlist" }, () => {
+          const win = window as unknown as { __niceoneRefreshStore?: () => void };
+          win.__niceoneRefreshStore?.();
+          return true;
+        }).catch(() => {});
+      }
+
+      return JSON.stringify(result);
+    } catch (error) {
+      console.error(
+        `${logPrefix} Error processing remove_from_favourites RPC:`,
+        error,
+      );
+      return createErrorResponse(
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  },
+
   checkout: async (data: { payload?: string | unknown }) => {
     const logPrefix = "[CHECKOUT RPC]";
     console.log(`${logPrefix} 🔵 checkout RPC handler called!`);

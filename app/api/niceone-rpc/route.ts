@@ -538,6 +538,195 @@ export async function POST(request: Request) {
       );
     }
 
+    if (action === "remove_from_cart") {
+      const productId = Number(payload.product_id);
+      if (!productId || Number.isNaN(productId)) {
+        return NextResponse.json({
+          success: false,
+          error: "not_in_cart",
+        });
+      }
+
+      const rawOpt = payload.option;
+      const optFilter =
+        typeof rawOpt === "string"
+          ? rawOpt.replace(/\s+/g, "").toLowerCase()
+          : rawOpt &&
+              typeof rawOpt === "object" &&
+              typeof (rawOpt as Record<string, unknown>).name === "string"
+            ? String((rawOpt as Record<string, unknown>).name)
+                .replace(/\s+/g, "")
+                .toLowerCase()
+            : "";
+
+      const currentCart = await fetchNiceOneApi("rest/cart/cart", {
+        method: "GET",
+        lang,
+        incomingCookie,
+        userAgent,
+      });
+
+      const cartObj = (
+        (currentCart.data?.data as Record<string, unknown> | undefined)?.cart ||
+        {}
+      ) as Record<string, unknown>;
+      const cartProductsGroups = (cartObj.cart_products || {}) as Record<
+        string,
+        { products?: Array<Record<string, unknown>> }
+      >;
+
+      const rawProducts: Array<Record<string, unknown>> = [];
+      for (const group of Object.values(cartProductsGroups)) {
+        if (group && Array.isArray(group.products)) {
+          rawProducts.push(...group.products);
+        }
+      }
+
+      const productLines = rawProducts.filter(
+        (p) => Number(p.product_id) === productId,
+      );
+
+      if (productLines.length === 0) {
+        return attachSessionCookies(
+          NextResponse.json({
+            success: false,
+            error: "not_in_cart",
+          }),
+          currentCart.sessionData,
+        );
+      }
+
+      let targetLine = productLines[0];
+      if (optFilter && productLines.length > 1) {
+        const matchedByOpt = productLines.find((p) => {
+          const opts = Array.isArray(p.option)
+            ? (p.option as Array<Record<string, unknown>>)
+            : [];
+          return opts.some((o) => {
+            const val = String(o.value || o.name || o.en_name || "")
+              .replace(/\s+/g, "")
+              .toLowerCase();
+            return val && (val.includes(optFilter) || optFilter.includes(val));
+          });
+        });
+        if (matchedByOpt) {
+          targetLine = matchedByOpt;
+        }
+      }
+
+      const lineKey = String(targetLine.key || "");
+      if (!lineKey) {
+        return attachSessionCookies(
+          NextResponse.json({
+            success: false,
+            error: "not_in_cart",
+          }),
+          currentCart.sessionData,
+        );
+      }
+
+      const delRes = await fetchNiceOneApi("rest/cart/cart", {
+        method: "DELETE",
+        lang,
+        incomingCookie,
+        userAgent,
+        body: { key: lineKey },
+      });
+
+      const isOk = delRes.data?.success === 1 || delRes.data?.success === true;
+      if (!isOk) {
+        return attachSessionCookies(
+          NextResponse.json({
+            success: false,
+            error: extractSiteError(delRes.data, "not_in_cart"),
+          }),
+          delRes.sessionData,
+        );
+      }
+
+      const updatedCartObj = (
+        (delRes.data?.data as Record<string, unknown> | undefined)?.cart || {}
+      ) as Record<string, unknown>;
+      const cartCount = Number(updatedCartObj.total_product_count ?? 0);
+
+      return attachSessionCookies(
+        NextResponse.json({
+          success: true,
+          cart_count: Number.isFinite(cartCount) ? cartCount : 0,
+        }),
+        delRes.sessionData,
+      );
+    }
+
+    if (action === "remove_from_favourites") {
+      const productId = Number(payload.product_id);
+      if (!productId || Number.isNaN(productId)) {
+        return NextResponse.json({
+          success: false,
+          error: "not_in_list",
+        });
+      }
+
+      const currentWish = await fetchNiceOneApi("rest/wishlist/wishlist", {
+        method: "GET",
+        lang,
+        incomingCookie,
+        userAgent,
+      });
+
+      const currentProducts = Array.isArray(
+        (currentWish.data?.data as Record<string, unknown> | undefined)
+          ?.products,
+      )
+        ? ((
+            currentWish.data.data as Record<string, unknown>
+          ).products as Array<Record<string, unknown>>)
+        : [];
+
+      const existsInWish = currentProducts.some(
+        (p) => Number(p.product_id ?? p.id) === productId,
+      );
+
+      if (!existsInWish) {
+        return attachSessionCookies(
+          NextResponse.json({
+            success: false,
+            error: "not_in_list",
+          }),
+          currentWish.sessionData,
+        );
+      }
+
+      const delRes = await fetchNiceOneApi(
+        `rest/wishlist/wishlist&id=${encodeURIComponent(String(productId))}`,
+        {
+          method: "DELETE",
+          lang,
+          incomingCookie,
+          userAgent,
+          body: { product_id: productId },
+        },
+      );
+
+      const isOk = delRes.data?.success === 1 || delRes.data?.success === true;
+      if (!isOk) {
+        return attachSessionCookies(
+          NextResponse.json({
+            success: false,
+            error: extractSiteError(delRes.data, "not_in_list"),
+          }),
+          delRes.sessionData,
+        );
+      }
+
+      return attachSessionCookies(
+        NextResponse.json({
+          success: true,
+        }),
+        delRes.sessionData,
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: `Unknown RPC action: ${action}` },
       { status: 400 },
