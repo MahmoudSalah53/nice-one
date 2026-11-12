@@ -18,8 +18,8 @@ export default function IframeLayout({ children }: LayoutProps) {
             padding: 0 !important;
           }
           body {
-            width: 400px !important;
-            height: 380px !important;
+            width: 100% !important;
+            height: 100% !important;
             background: transparent !important;
             overflow: hidden !important;
             margin: 0 !important;

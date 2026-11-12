@@ -248,39 +248,34 @@ export default function EmbedPopupPage() {
     if (!appConfig) return;
 
     const checkAndNotifySize = () => {
-      const body = document.body;
+      const svwRoot = document.querySelector(".svw-root") as HTMLElement | null;
+      let width = 104;
+      let height = 104;
 
-      // If popup is closed, keep a compact footprint so it behaves like a small button
-      const isPopupOpen =
-        typeof window !== "undefined" &&
-        (window as unknown as { __popupOpen?: boolean }).__popupOpen;
-
-      let width: number;
-      let height: number;
-
-      if (!isPopupOpen) {
-        width = 150;
-        height = 100;
+      if (svwRoot) {
+        const phase = svwRoot.getAttribute("data-phase") || "closed";
+        const tease = svwRoot.getAttribute("data-tease") === "1";
+        const hover = svwRoot.getAttribute("data-hover") === "1";
+        if (phase !== "closed") {
+          width = 356;
+          height = 112;
+        } else if (tease || hover) {
+          width = 224;
+          height = 104;
+        }
       } else {
-        // In iframe mode we want compact sizing based on the visible voice controls,
-        // not full document scroll dimensions (which can be overly large).
-        const controlsEl = document.querySelector(
-          '[aria-label="Voice assistant controls"]',
-        ) as HTMLElement | null;
-
-        if (controlsEl) {
-          const rect = controlsEl.getBoundingClientRect();
-          width = Math.max(Math.ceil(rect.width) + 24, 160);
-          height = Math.max(Math.ceil(rect.height) + 24, 80);
-        } else {
-          width = Math.max(body.scrollWidth, 160);
-          height = Math.max(body.scrollHeight, 80);
+        const isPopupOpen =
+          typeof window !== "undefined" &&
+          (window as unknown as { __popupOpen?: boolean }).__popupOpen;
+        if (isPopupOpen) {
+          width = 356;
+          height = 112;
         }
       }
 
       if (
-        Math.abs(width - lastSizeRef.current.width) > 5 ||
-        Math.abs(height - lastSizeRef.current.height) > 5
+        Math.abs(width - lastSizeRef.current.width) > 2 ||
+        Math.abs(height - lastSizeRef.current.height) > 2
       ) {
         lastSizeRef.current = { width, height };
         notifyParent("lk-embed-resize", { width, height });

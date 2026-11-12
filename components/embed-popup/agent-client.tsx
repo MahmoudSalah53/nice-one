@@ -19,8 +19,6 @@ import {
   RoomContext,
   StartAudio,
 } from "@livekit/components-react";
-import { ActionBar } from "@/components/embed-popup/action-bar";
-import { ErrorMessage } from "@/components/embed-popup/error-message";
 import { Trigger } from "@/components/embed-popup/trigger";
 import useConnectionDetails from "@/hooks/use-connection-details";
 import { type AppConfig, EmbedErrorDetails } from "@/lib/types";
@@ -70,8 +68,6 @@ function AgentClient({ appConfig }: EmbedFixedAgentClientProps) {
   const {
     isManualCloseRef,
     handleTogglePopup,
-    handlePanelAnimationStart,
-    handlePanelAnimationComplete,
   } = usePopupToggle({ setPopupOpen, setError });
 
   // Connection details hook
@@ -293,43 +289,6 @@ function AgentClient({ appConfig }: EmbedFixedAgentClientProps) {
         popupOpen={popupOpen}
         onToggle={handleTogglePopup}
       />
-
-      {popupOpen &&
-        (() => {
-          const fullWidth = !!error;
-          return (
-            <div
-              // Use pixels because the host page may override the root rem size.
-              className={`fixed right-[68px] bottom-[53px] z-[99999] flex flex-col ${fullWidth ? "w-[320px]" : "w-fit"}`}
-              style={{
-                position: "fixed",
-                right: "68px",
-                bottom: "53px",
-                zIndex: 99999,
-              }}
-              onTransitionStart={handlePanelAnimationStart}
-              onTransitionEnd={handlePanelAnimationComplete}
-            >
-              {error ? (
-                <div className="bg-bg1 dark:bg-bg2 rounded-[24px] p-0 drop-shadow-md">
-                  <ErrorMessage error={error} sandboxId={appConfig.sandboxId} />
-                </div>
-              ) : (
-                <div className="mr-1 w-fit rounded-[24px] border border-neutral-200 bg-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.16)]">
-                  <ActionBar
-                    className="!m-0 !border-neutral-200 !bg-white !text-neutral-900"
-                    controls={{ microphone: true, chat: false }}
-                    capabilities={{
-                      supportsChatInput: false,
-                      supportsVideoInput: false,
-                      supportsScreenShare: false,
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })()}
     </RoomContext.Provider>
   );
 }

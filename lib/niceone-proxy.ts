@@ -126,7 +126,8 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
       background: #ffffff;
     }
     #lk-iframe-embed-wrapper {
-      min-height: 120px !important;
+      bottom: 0 !important;
+      right: 0 !important;
     }
   </style>
 </head>

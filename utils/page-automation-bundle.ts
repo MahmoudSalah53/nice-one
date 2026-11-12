@@ -358,18 +358,18 @@ function createIframeEmbed(): void {
 
   console.log("[Page Automation] Creating iframe embed...");
 
-  // Create wrapper div - starts with button size (like chrome extension)
+  // Create wrapper div - anchored at bottom-right corner so inner .svw-fab at right:16px/bottom:16px matches viewport
   const wrapper = document.createElement("div");
   wrapper.id = "lk-iframe-embed-wrapper";
   let shrinkTimer: number | null = null;
-  const SHRINK_DELAY_MS = 180;
+  const SHRINK_DELAY_MS = 600;
   wrapper.style.cssText = `
     position: fixed !important;
-    bottom: 16px !important;
-    right: 16px !important;
+    bottom: 0px !important;
+    right: 0px !important;
     z-index: 2147483647 !important;
-    width: 100px !important;
-    height: 100px !important;
+    width: 104px !important;
+    height: 104px !important;
     border: none !important;
     background: transparent !important;
     pointer-events: auto !important;  /* ⚠️ عادي - بيستقبل clicks */
