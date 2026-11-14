@@ -69,8 +69,41 @@ const NICEONE_URL_PATTERN = /(?:^|\.)niceonesa\.com/i;
       }
     }
 
+    if (event.data.type === "voice-agent-fetch-request") {
+      const { id, url, options } = event.data;
+      chrome.runtime.sendMessage(
+        { action: "fetch", url, options },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            window.postMessage(
+              {
+                type: "voice-agent-fetch-response",
+                id,
+                success: false,
+                error: chrome.runtime.lastError.message,
+              },
+              "*",
+            );
+            return;
+          }
+          window.postMessage(
+            {
+              type: "voice-agent-fetch-response",
+              id,
+              ...(response || {
+                success: false,
+                error: "Empty response from extension background",
+              }),
+            },
+            "*",
+          );
+        },
+      );
+      return;
+    }
+
     if (event.data.type === "voice-agent-action-result") {
-      const { requestId, success, error } = event.data;
+      const { type: _ignoredType, requestId, success, error, ...rest } = event.data;
       console.log(
         LOG_PREFIX,
         "Action result:",
@@ -84,6 +117,7 @@ const NICEONE_URL_PATTERN = /(?:^|\.)niceonesa\.com/i;
             requestId,
             success,
             error,
+            ...rest,
           },
           "*",
         );
@@ -247,13 +281,27 @@ const NICEONE_URL_PATTERN = /(?:^|\.)niceonesa\.com/i;
     );
   }
 
+  function injectFetchProxy() {
+    if (document.querySelector('script[data-niceone-fetch-proxy="true"]')) {
+      return;
+    }
+    const proxyScript = document.createElement("script");
+    proxyScript.src = chrome.runtime.getURL("fetch-proxy.js");
+    proxyScript.async = false;
+    proxyScript.dataset.niceoneFetchProxy = "true";
+    (document.head || document.documentElement).appendChild(proxyScript);
+  }
+
   function injectPopupScript(sandboxId) {
     if (document.querySelector('script[data-niceone-popup="true"]')) {
       return;
     }
 
+    injectFetchProxy();
+
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("embed-popup.js");
+    script.async = false;
     script.dataset.lkSandboxId = sandboxId;
     script.dataset.niceonePopup = "true";
     script.onload = () => {

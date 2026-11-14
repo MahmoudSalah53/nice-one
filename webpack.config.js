@@ -47,6 +47,11 @@ module.exports = {
               content = content.replace(/15360/g, String(MAX_DATA_BYTES));
               fs.writeFileSync(jsPath, content, "utf8");
               console.log(`✅ Replaced MAX_DATA_BYTES in ${bundle}.js: 15360 → ${MAX_DATA_BYTES}`);
+
+              const extDir = path.resolve(__dirname, "node-extension");
+              if (fs.existsSync(extDir)) {
+                fs.copyFileSync(jsPath, path.join(extDir, `${bundle}.js`));
+              }
             }
 
             // Replace in map file

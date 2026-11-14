@@ -3,6 +3,8 @@
  * Provides methods to interact with page elements via jsid
  */
 
+import { isNiceOneHost, navigateNiceOneSpa } from "@/utils/niceone-client-api";
+
 export interface SiteAutomationInterface {
   add_to_cart?(quantity: string, warranty_index?: number): boolean;
   checkout?(country: string, phoneOrEmail: string): boolean;
@@ -178,19 +180,10 @@ const SiteAutomation: SiteAutomationInterface = {
     if (!route || typeof route !== "string") return false;
     const trimmed = route.trim();
 
-    // Check for iframe live proxy navigation first
-    if (typeof window !== "undefined") {
-      const win = window as unknown as {
-        __niceoneLiveNavigate?: (u: string) => boolean;
-        __alawalyLiveNavigate?: (u: string) => boolean;
-      };
-      if (typeof win.__niceoneLiveNavigate === "function") {
-        const ok = win.__niceoneLiveNavigate(trimmed);
-        if (ok) return true;
-      } else if (typeof win.__alawalyLiveNavigate === "function") {
-        const ok = win.__alawalyLiveNavigate(trimmed);
-        if (ok) return true;
-      }
+    // When running inside the Nice One Chrome Extension on niceonesa.com,
+    // use Nuxt's Vue Router for smooth SPA navigation so the LiveKit voice call stays alive
+    if (typeof window !== "undefined" && isNiceOneHost()) {
+      return navigateNiceOneSpa(trimmed);
     }
 
     // Full URL (external) requires hard navigation

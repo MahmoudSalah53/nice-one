@@ -258,6 +258,12 @@ export default function Welcome() {
           </h1>
           <div className="mt-1 flex items-center gap-3">
             <a
+              href="/extension-builder"
+              className="text-fg2 hover:text-fgAccent focus:text-fgAccent text-sm font-medium transition-colors underline underline-offset-4"
+            >
+              Extension Builder
+            </a>
+            <a
               href="/rpctester"
               className="text-fg2 hover:text-fgAccent focus:text-fgAccent text-sm font-medium transition-colors underline underline-offset-4"
             >

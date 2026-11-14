@@ -13,6 +13,11 @@ import serializerInstance, {
 } from "./interactiveDomSerializer";
 import SiteAutomation from "./siteAutomation";
 import {
+  executeNiceOneRpc,
+  refreshNiceOneStore,
+  type NiceOneRpcAction,
+} from "./niceone-client-api";
+import {
   selectStations,
   setTripTypeAndDateISO,
   setPassengers,
@@ -49,12 +54,13 @@ function collectDOM(): DOMElementsJSON {
 interface ActionResult {
   success: boolean;
   error?: string;
+  [key: string]: unknown;
 }
 
-function executeAction(
+async function executeAction(
   action: string,
   data: Record<string, unknown>,
-): ActionResult {
+): Promise<ActionResult> {
   try {
     switch (action) {
       case "click_button": {
@@ -74,13 +80,26 @@ function executeAction(
       }
 
       case "refresh_store": {
-        const win = window as unknown as {
-          __niceoneRefreshStore?: () => void;
-        };
-        if (typeof win.__niceoneRefreshStore === "function") {
-          win.__niceoneRefreshStore();
-        }
+        const refreshType =
+          data.type === "cart" || data.type === "wishlist" ? data.type : "all";
+        refreshNiceOneStore(refreshType);
         return { success: true };
+      }
+
+      case "niceone_rpc": {
+        const rpcAction = data.rpcAction as NiceOneRpcAction | undefined;
+        const rpcPayload =
+          data.payload && typeof data.payload === "object"
+            ? (data.payload as Record<string, unknown>)
+            : {};
+        if (!rpcAction) {
+          return { success: false, error: "Missing rpcAction" };
+        }
+        const rpcResult = await executeNiceOneRpc(rpcAction, rpcPayload);
+        return {
+          success: Boolean(rpcResult.success),
+          ...rpcResult,
+        };
       }
 
       case "fill_input": {
@@ -314,15 +333,28 @@ function handleMessage(event: MessageEvent): void {
   if (event.data.type === "voice-agent-execute-action") {
     const { action, data, requestId } = event.data;
     console.log("[Page Automation] Executing action:", action);
-    const result = executeAction(action, data);
-    window.postMessage(
-      {
-        type: "voice-agent-action-result",
-        requestId,
-        ...result,
-      },
-      "*",
-    );
+    executeAction(action, data || {})
+      .then((result) => {
+        window.postMessage(
+          {
+            type: "voice-agent-action-result",
+            requestId,
+            ...result,
+          },
+          "*",
+        );
+      })
+      .catch((err) => {
+        window.postMessage(
+          {
+            type: "voice-agent-action-result",
+            requestId,
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          "*",
+        );
+      });
   }
 }
 
@@ -474,33 +506,45 @@ function createIframeEmbed(): void {
     if (messageType === "lk-execute-action") {
       const { action, data, requestId } = event.data;
       console.log("[Page Automation] Action requested:", action);
-      const result = executeAction(action, data);
+      executeAction(action, data || {})
+        .then((result) => {
+          if (iframeWindow) {
+            iframeWindow.postMessage(
+              {
+                type: "lk-action-result",
+                requestId,
+                ...result,
+              },
+              "*",
+            );
+          }
 
-      // Send result back to iframe
-      if (iframeWindow) {
-        iframeWindow.postMessage(
-          {
-            type: "lk-action-result",
-            requestId,
-            ...result,
-          },
-          "*",
-        );
-      }
-
-      // After action, send updated DOM after a delay (and a second pass for async route/hydration updates)
-      setTimeout(() => {
-        const domData = collectDOM();
-        lastDOMSnapshot = domData;
-        sendDOMToIframe(domData);
-      }, 450);
-      if (action === "navigate" || action === "click_button") {
-        setTimeout(() => {
-          const domData = collectDOM();
-          lastDOMSnapshot = domData;
-          sendDOMToIframe(domData);
-        }, 1400);
-      }
+          setTimeout(() => {
+            const domData = collectDOM();
+            lastDOMSnapshot = domData;
+            sendDOMToIframe(domData);
+          }, 450);
+          if (action === "navigate" || action === "click_button") {
+            setTimeout(() => {
+              const domData = collectDOM();
+              lastDOMSnapshot = domData;
+              sendDOMToIframe(domData);
+            }, 1400);
+          }
+        })
+        .catch((err) => {
+          if (iframeWindow) {
+            iframeWindow.postMessage(
+              {
+                type: "lk-action-result",
+                requestId,
+                success: false,
+                error: err instanceof Error ? err.message : String(err),
+              },
+              "*",
+            );
+          }
+        });
     }
 
     // Handle popup open request from iframe (for script tag mode - trigger is in iframe)
@@ -605,22 +649,8 @@ function init(): void {
     setUrlChangeCallback(handleUrlChange);
   }
 
-  // Initialize message handler (for extension mode communication + niceone-frame-load updates)
-  window.addEventListener("message", (event: MessageEvent) => {
-    handleMessage(event);
-    if (event.data && event.data.type === "niceone-frame-load" && isScriptTagMode) {
-      setTimeout(() => {
-        const domData = collectDOM();
-        lastDOMSnapshot = domData;
-        sendDOMToIframe(domData);
-      }, 350);
-      setTimeout(() => {
-        const domData = collectDOM();
-        lastDOMSnapshot = domData;
-        sendDOMToIframe(domData);
-      }, 1200);
-    }
-  });
+  // Initialize message handler (for extension mode communication)
+  window.addEventListener("message", handleMessage);
 
   // Get initial DOM snapshot
   lastDOMSnapshot = collectDOM();

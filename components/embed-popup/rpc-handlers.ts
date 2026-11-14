@@ -10,6 +10,10 @@ import {
   setTripTypeAndDateISO,
   setPassengers,
 } from "@/utils/custom";
+import {
+  executeNiceOneRpc,
+  type NiceOneRpcAction,
+} from "@/utils/niceone-client-api";
 
 const bookingStepDelay = (ms: number) =>
   new Promise<void>((r) => setTimeout(r, ms));
@@ -21,7 +25,7 @@ declare global {
     __executeParentAction: (
       action: string,
       data: Record<string, unknown>,
-    ) => Promise<{ success: boolean; error?: string }>;
+    ) => Promise<{ success: boolean; error?: string } & Record<string, unknown>>;
   }
 }
 
@@ -63,6 +67,26 @@ async function executeAction(
   // Normal mode - execute directly
   const success = normalModeExecutor();
   return { success, error: success ? undefined : `${action} failed` };
+}
+
+/**
+ * Execute Nice One Cart/Wishlist RPC directly in the shopper's browser on niceonesa.com
+ * (or forward to parent page when running inside an iframe).
+ */
+async function runNiceOneClientRpc(
+  action: NiceOneRpcAction,
+  payload: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  if (isIframeMode()) {
+    if (typeof window.__executeParentAction === "function") {
+      return window.__executeParentAction("niceone_rpc", {
+        rpcAction: action,
+        payload,
+      });
+    }
+    return { success: false, error: "Iframe bridge not available" };
+  }
+  return executeNiceOneRpc(action, payload);
 }
 
 export const rpcHandlers = {
@@ -772,25 +796,8 @@ export const rpcHandlers = {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
       console.log(`${logPrefix} Parsed payload:`, payload);
 
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "add_to_cart", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
-
-      if (result.success) {
-        // Trigger live cart badge / store refresh in the host shell & iframe without navigating
-        executeAction("refresh_store", { type: "cart" }, () => {
-          const win = window as unknown as { __niceoneRefreshStore?: () => void };
-          win.__niceoneRefreshStore?.();
-          return true;
-        }).catch(() => {});
-      }
-
+      const result = await runNiceOneClientRpc("add_to_cart", payload);
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(`${logPrefix} Error processing add_to_cart RPC:`, error);
@@ -808,25 +815,8 @@ export const rpcHandlers = {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
       console.log(`${logPrefix} Parsed payload:`, payload);
 
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "add_to_favourites", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
-
-      if (result.success) {
-        // Trigger live wishlist badge / heart refresh in the host shell & iframe without navigating
-        executeAction("refresh_store", { type: "wishlist" }, () => {
-          const win = window as unknown as { __niceoneRefreshStore?: () => void };
-          win.__niceoneRefreshStore?.();
-          return true;
-        }).catch(() => {});
-      }
-
+      const result = await runNiceOneClientRpc("add_to_favourites", payload);
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(
@@ -845,15 +835,8 @@ export const rpcHandlers = {
 
     try {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "get_cart", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
+      const result = await runNiceOneClientRpc("get_cart", payload);
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(`${logPrefix} Error processing get_cart RPC:`, error);
@@ -869,15 +852,8 @@ export const rpcHandlers = {
 
     try {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "get_favourites", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
+      const result = await runNiceOneClientRpc("get_favourites", payload);
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(`${logPrefix} Error processing get_favourites RPC:`, error);
@@ -893,24 +869,8 @@ export const rpcHandlers = {
 
     try {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "remove_from_cart", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
-
-      if (result.success) {
-        executeAction("refresh_store", { type: "cart" }, () => {
-          const win = window as unknown as { __niceoneRefreshStore?: () => void };
-          win.__niceoneRefreshStore?.();
-          return true;
-        }).catch(() => {});
-      }
-
+      const result = await runNiceOneClientRpc("remove_from_cart", payload);
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(
@@ -932,24 +892,11 @@ export const rpcHandlers = {
 
     try {
       const payload = (parsePayload(data) || {}) as Record<string, unknown>;
-      const res = await fetch("/api/niceone-rpc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ action: "remove_from_favourites", payload }),
-      });
-
-      const result = (await res.json()) as Record<string, unknown>;
-      console.log(`${logPrefix} API result:`, result);
-
-      if (result.success) {
-        executeAction("refresh_store", { type: "wishlist" }, () => {
-          const win = window as unknown as { __niceoneRefreshStore?: () => void };
-          win.__niceoneRefreshStore?.();
-          return true;
-        }).catch(() => {});
-      }
-
+      const result = await runNiceOneClientRpc(
+        "remove_from_favourites",
+        payload,
+      );
+      console.log(`${logPrefix} Client API result:`, result);
       return JSON.stringify(result);
     } catch (error) {
       console.error(

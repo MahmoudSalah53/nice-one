@@ -18,7 +18,7 @@ declare global {
     __executeParentAction: (
       action: string,
       data: Record<string, unknown>,
-    ) => Promise<{ success: boolean; error?: string }>;
+    ) => Promise<{ success: boolean; error?: string } & Record<string, unknown>>;
     __iframeChangeCallbacks: Set<(data: unknown) => void>;
   }
 }
@@ -34,7 +34,10 @@ export default function EmbedPopupPage() {
   const [error, setError] = useState<string | null>(null);
   const lastSizeRef = useRef({ width: 0, height: 0 });
   const pendingActionsRef = useRef<
-    Map<string, (result: { success: boolean; error?: string }) => void>
+    Map<
+      string,
+      (result: { success: boolean; error?: string } & Record<string, unknown>) => void
+    >
   >(new Map());
 
   // Check if running in iframe
@@ -230,11 +233,15 @@ export default function EmbedPopupPage() {
 
       // Handle action result from parent
       if (event.data.type === "lk-action-result") {
-        const { requestId, success, error } = event.data;
+        const { type: _msgType, requestId, ...resultPayload } = event.data;
+        void _msgType;
         const callback = pendingActionsRef.current.get(requestId);
         if (callback) {
           pendingActionsRef.current.delete(requestId);
-          callback({ success, error });
+          callback({
+            success: Boolean(resultPayload.success),
+            ...resultPayload,
+          });
         }
       }
     };
