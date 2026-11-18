@@ -12,6 +12,7 @@ import {
 } from "@/utils/custom";
 import {
   executeNiceOneRpc,
+  isNiceOneHost,
   type NiceOneRpcAction,
 } from "@/utils/niceone-client-api";
 
@@ -77,6 +78,12 @@ async function runNiceOneClientRpc(
   action: NiceOneRpcAction,
   payload: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
+  // 1. Direct Chrome Extension popup mode on niceonesa.com
+  if (isNiceOneHost()) {
+    return executeNiceOneRpc(action, payload);
+  }
+
+  // 2. Iframe mode (either Reverse Proxy /embed-popup or Extension iframe)
   if (isIframeMode()) {
     if (typeof window.__executeParentAction === "function") {
       return window.__executeParentAction("niceone_rpc", {
@@ -86,7 +93,20 @@ async function runNiceOneClientRpc(
     }
     return { success: false, error: "Iframe bridge not available" };
   }
-  return executeNiceOneRpc(action, payload);
+
+  // 3. Direct same-origin server mode (Reverse Proxy / rpctester)
+  const res = await fetch("/api/niceone-rpc", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ action, payload }),
+  });
+  const result = (await res.json()) as Record<string, unknown>;
+  if (result.success && typeof window !== "undefined") {
+    const win = window as unknown as { __niceoneRefreshStore?: () => void };
+    win.__niceoneRefreshStore?.();
+  }
+  return result;
 }
 
 export const rpcHandlers = {

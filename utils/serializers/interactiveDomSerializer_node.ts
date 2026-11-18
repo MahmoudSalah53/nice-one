@@ -973,12 +973,57 @@ class InteractiveDomSerializer implements InteractiveDomSerializerInterface {
     const allInteractiveElements =
       this._collectAllInteractiveElementsInOrder(root);
 
-    const resolvedUrl: string | null =
-      typeof window !== "undefined" && window.location
-        ? window.location.href
-        : null;
-    const resolvedTitle: string | null =
+    let resolvedUrl: string | null = null;
+    let resolvedTitle: string | null =
       typeof document !== "undefined" ? document.title || null : null;
+
+    if (typeof window !== "undefined") {
+      try {
+        const liveFrame = document.getElementById(
+          "niceone-live-frame",
+        ) as HTMLIFrameElement | null;
+        if (liveFrame) {
+          const frameDoc =
+            liveFrame.contentDocument || liveFrame.contentWindow?.document;
+          if (frameDoc?.title) {
+            resolvedTitle = frameDoc.title.trim() || resolvedTitle;
+          }
+          const frameLoc = liveFrame.contentWindow?.location;
+          if (
+            frameLoc &&
+            frameLoc.pathname &&
+            frameLoc.pathname !== "blank" &&
+            !frameLoc.href.startsWith("about:")
+          ) {
+            const sp = new URLSearchParams(frameLoc.search || "");
+            sp.delete("__frame");
+            const cleanSearch = sp.toString() ? `?${sp.toString()}` : "";
+            resolvedUrl = `https://niceonesa.com${frameLoc.pathname}${cleanSearch}${frameLoc.hash || ""}`;
+          }
+        }
+      } catch {
+        // Ignore cross-origin or access error
+      }
+
+      const winWithUrl = window as unknown as { __niceoneCurrentUrl?: string };
+      if (!resolvedUrl && winWithUrl.__niceoneCurrentUrl) {
+        resolvedUrl = winWithUrl.__niceoneCurrentUrl;
+      }
+
+      if (!resolvedUrl && window.location) {
+        const sp = new URLSearchParams(window.location.search || "");
+        sp.delete("__frame");
+        const cleanSearch = sp.toString() ? `?${sp.toString()}` : "";
+        if (
+          window.location.pathname.startsWith("/ar") ||
+          window.location.pathname.startsWith("/en")
+        ) {
+          resolvedUrl = `https://niceonesa.com${window.location.pathname}${cleanSearch}${window.location.hash || ""}`;
+        } else {
+          resolvedUrl = window.location.href;
+        }
+      }
+    }
 
     return {
       ts: String(Date.now()),

@@ -14,6 +14,7 @@ import serializerInstance, {
 import SiteAutomation from "./siteAutomation";
 import {
   executeNiceOneRpc,
+  isNiceOneHost,
   refreshNiceOneStore,
   type NiceOneRpcAction,
 } from "./niceone-client-api";
@@ -80,6 +81,12 @@ async function executeAction(
       }
 
       case "refresh_store": {
+        const win = window as unknown as {
+          __niceoneRefreshStore?: () => void;
+        };
+        if (typeof win.__niceoneRefreshStore === "function") {
+          win.__niceoneRefreshStore();
+        }
         const refreshType =
           data.type === "cart" || data.type === "wishlist" ? data.type : "all";
         refreshNiceOneStore(refreshType);
@@ -95,7 +102,36 @@ async function executeAction(
         if (!rpcAction) {
           return { success: false, error: "Missing rpcAction" };
         }
-        const rpcResult = await executeNiceOneRpc(rpcAction, rpcPayload);
+
+        // On niceonesa.com (Chrome Extension), execute client-side directly
+        if (isNiceOneHost()) {
+          const rpcResult = await executeNiceOneRpc(rpcAction, rpcPayload);
+          return {
+            success: Boolean(rpcResult.success),
+            ...rpcResult,
+          };
+        }
+
+        // On Reverse Proxy host shell (/ar, /en), call same-origin /api/niceone-rpc
+        const res = await fetch("/api/niceone-rpc", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ action: rpcAction, payload: rpcPayload }),
+        });
+        const rpcResult = (await res.json()) as Record<string, unknown>;
+        if (
+          rpcResult.success &&
+          (rpcAction === "add_to_cart" ||
+            rpcAction === "remove_from_cart" ||
+            rpcAction === "add_to_favourites" ||
+            rpcAction === "remove_from_favourites")
+        ) {
+          const win = window as unknown as {
+            __niceoneRefreshStore?: () => void;
+          };
+          win.__niceoneRefreshStore?.();
+        }
         return {
           success: Boolean(rpcResult.success),
           ...rpcResult,
@@ -649,8 +685,22 @@ function init(): void {
     setUrlChangeCallback(handleUrlChange);
   }
 
-  // Initialize message handler (for extension mode communication)
-  window.addEventListener("message", handleMessage);
+  // Initialize message handler (for extension mode communication + niceone-frame-load updates)
+  window.addEventListener("message", (event: MessageEvent) => {
+    handleMessage(event);
+    if (event.data && event.data.type === "niceone-frame-load" && isScriptTagMode) {
+      setTimeout(() => {
+        const domData = collectDOM();
+        lastDOMSnapshot = domData;
+        sendDOMToIframe(domData);
+      }, 350);
+      setTimeout(() => {
+        const domData = collectDOM();
+        lastDOMSnapshot = domData;
+        sendDOMToIframe(domData);
+      }, 1200);
+    }
+  });
 
   // Get initial DOM snapshot
   lastDOMSnapshot = collectDOM();
