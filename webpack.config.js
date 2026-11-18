@@ -27,7 +27,12 @@ module.exports = {
     // NOTE: the below doesn't whitelist, see https://github.com/mrsteele/dotenv-webpack/issues/41
     new Dotenv({
       systemvars: true,
-      path: ".env.local",
+      path: fs.existsSync(path.resolve(__dirname, ".env.local"))
+        ? ".env.local"
+        : fs.existsSync(path.resolve(__dirname, ".env"))
+          ? ".env"
+          : undefined,
+      silent: true,
     }),
     // Custom plugin to replace MAX_DATA_BYTES value in bundled files
     {
