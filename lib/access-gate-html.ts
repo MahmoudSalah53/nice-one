@@ -162,7 +162,8 @@ export function buildGateHtml(): string {
 
     <p class="notice">
       هذه <strong>بيئة عرض تقنية</strong> من EraCoda لتجربة المساعد الصوتي، وليست الموقع الرسمي لمتجر نايس ون.<br />
-      للتسوق وإتمام الطلبات يُرجى زيارة الموقع الرسمي <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a>
+      للتسوق وإتمام الطلبات يُرجى زيارة الموقع الرسمي <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a><br />
+      لا نقوم بجمع أو تخزين أي بيانات خاصة، ويقتصر عمل النظام على البيانات العامة المتاحة للعميل فقط.
     </p>
 
     <form class="card" id="f" autocomplete="off" novalidate>
