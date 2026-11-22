@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const AUTH_COOKIE_NAME = "__ep_staging_auth";
+const LEGACY_AUTH_COOKIE_NAME = "__ep_staging_auth";
+const AUTH_COOKIE_NAME = "__ep_staging_auth_v2";
 const DEFAULT_ACCESS_PASSWORD = "ElectroPi@2026";
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 const PUBLIC_BRAND_ASSETS = new Set([
   "/eracoda-logo-dark.png",
@@ -50,7 +50,7 @@ async function computeAuthToken(password: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
-    enc.encode(`ep-access-gate-v1:${password}`),
+    enc.encode(`ep-access-gate-v2:${password}`),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -58,7 +58,7 @@ async function computeAuthToken(password: string): Promise<string> {
   const sig = await crypto.subtle.sign(
     "HMAC",
     key,
-    enc.encode("authorized-staging-session"),
+    enc.encode("authorized-staging-session-v2"),
   );
   return toHex(sig);
 }
@@ -613,13 +613,15 @@ export async function middleware(request: NextRequest) {
       { ok: true },
       { status: 200, headers: SECURITY_HEADERS },
     );
+    // Clear legacy 7-day cookie if present
+    res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
+    // Session cookie (no maxAge/expires) -> cleared automatically when the browser closes
     res.cookies.set({
       name: AUTH_COOKIE_NAME,
       value: expectedToken,
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge: COOKIE_MAX_AGE_SECONDS,
       secure: isHttpsRequest(request),
     });
     return res;
@@ -629,6 +631,7 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/__auth/logout") {
     const redirectUrl = new URL("/", request.url);
     const res = NextResponse.redirect(redirectUrl);
+    res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
     res.cookies.delete(AUTH_COOKIE_NAME);
     return res;
   }
@@ -657,13 +660,17 @@ export async function middleware(request: NextRequest) {
     !isAssetOrApiPath(pathname);
 
   if (isBrowserPageNavigation) {
-    return new NextResponse(buildGateHtml(), {
+    const res = new NextResponse(buildGateHtml(), {
       status: 401,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         ...SECURITY_HEADERS,
       },
     });
+    if (request.cookies.has(LEGACY_AUTH_COOKIE_NAME)) {
+      res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
+    }
+    return res;
   }
 
   return NextResponse.json(
