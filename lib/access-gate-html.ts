@@ -123,6 +123,10 @@ export function buildGateHtml(): string {
       border-color: rgba(240, 165, 40, 0.6);
       box-shadow: 0 0 0 3px rgba(240, 165, 40, 0.12);
     }
+    .field input::-ms-reveal,
+    .field input::-ms-clear {
+      display: none;
+    }
     .eye {
       position: absolute;
       top: 50%;
