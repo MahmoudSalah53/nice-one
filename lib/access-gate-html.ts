@@ -257,7 +257,21 @@ export function buildGateHtml(): string {
         })
           .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (res) {
-            if (res.ok && res.d && res.d.ok) { window.location.reload(); return; }
+            if (res.ok && res.d && res.d.ok) {
+              try {
+                window.sessionStorage.setItem("__ep_tab_verified", "1");
+              } catch (e) {}
+              var sp = new URLSearchParams(window.location.search);
+              var nextPath = sp.get("next");
+              if (nextPath && nextPath.charAt(0) === "/" && nextPath.charAt(1) !== "/") {
+                window.location.replace(nextPath);
+              } else if (window.location.pathname === "/__auth/reenter") {
+                window.location.replace("/en");
+              } else {
+                window.location.reload();
+              }
+              return;
+            }
             busy = false;
             btn.textContent = "دخول";
             err.textContent = (res.d && res.d.error) || "كلمة المرور غير صحيحة";

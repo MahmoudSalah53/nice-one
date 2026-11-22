@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildGateHtml } from "@/lib/access-gate-html";
 
 const LEGACY_AUTH_COOKIE_NAME = "__ep_staging_auth";
+const LEGACY_ENTRY_PASS_COOKIE_NAME = "__ep_entry_pass";
 const AUTH_COOKIE_NAME = "__ep_staging_auth_v2";
 const DEFAULT_ACCESS_PASSWORD = "ElectroPi@2026";
 
@@ -112,10 +113,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // 3. Dedicated per-tab re-entry disclaimer gate (triggered when opening a new/closed tab)
+  if (pathname === "/__auth/reenter" && request.method === "GET") {
+    return new NextResponse(buildGateHtml(), {
+      status: 401,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        ...SECURITY_HEADERS,
+      },
+    });
+  }
+
   const configuredPassword = getConfiguredPassword();
   const expectedToken = await computeAuthToken(configuredPassword);
 
-  // 3. Handle password + consent unlock submission directly in middleware
+  // 4. Handle password + consent unlock submission directly in middleware
   if (pathname === "/__auth/unlock" && request.method === "POST") {
     let submitted = "";
     let accepted = false;
@@ -135,7 +147,8 @@ export async function middleware(request: NextRequest) {
           formData.get("password") ?? formData.get("code") ?? "",
         ).trim();
         const rawAccepted = String(formData.get("accepted") ?? "").toLowerCase();
-        accepted = rawAccepted === "true" || rawAccepted === "on" || rawAccepted === "1";
+        accepted =
+          rawAccepted === "true" || rawAccepted === "on" || rawAccepted === "1";
       }
     } catch {
       return NextResponse.json(
@@ -146,7 +159,10 @@ export async function middleware(request: NextRequest) {
 
     if (!accepted) {
       return NextResponse.json(
-        { ok: false, error: "يرجى تفعيل مربع الموافقة على الإقرار أولاً للمتابعة" },
+        {
+          ok: false,
+          error: "يرجى تفعيل مربع الموافقة على الإقرار أولاً للمتابعة",
+        },
         { status: 400, headers: SECURITY_HEADERS },
       );
     }
@@ -162,9 +178,9 @@ export async function middleware(request: NextRequest) {
       { ok: true },
       { status: 200, headers: SECURITY_HEADERS },
     );
-    // Clear legacy 7-day cookie if present
     res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
-    // Session cookie (no maxAge/expires) -> cleared automatically when the browser closes
+    res.cookies.delete(LEGACY_ENTRY_PASS_COOKIE_NAME);
+    // Browser-session cookie (cleared on browser close); per-tab gate enforced via sessionStorage
     res.cookies.set({
       name: AUTH_COOKIE_NAME,
       value: expectedToken,
@@ -176,16 +192,17 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // 4. Handle logout endpoint
+  // 5. Handle logout endpoint
   if (pathname === "/__auth/logout") {
     const redirectUrl = new URL("/", request.url);
     const res = NextResponse.redirect(redirectUrl);
     res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
+    res.cookies.delete(LEGACY_ENTRY_PASS_COOKIE_NAME);
     res.cookies.delete(AUTH_COOKIE_NAME);
     return res;
   }
 
-  // 5. Allow LiveKit token generation endpoint (JSON-only, zero proxied content)
+  // 6. Allow LiveKit token generation endpoint (JSON-only, zero proxied content)
   if (
     pathname === "/api/connection-details" &&
     (request.method === "POST" || request.method === "OPTIONS")
@@ -193,7 +210,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 6. Verify signed session cookie
+  // 7. Verify signed session cookie
   const currentCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value || "";
   if (currentCookie && timingSafeEqualStr(currentCookie, expectedToken)) {
     const res = NextResponse.next();
@@ -201,7 +218,7 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // 7. Block unauthenticated requests before any route or reverse-proxy rewrite runs
+  // 8. Block unauthenticated requests before any route or reverse-proxy rewrite runs
   const accept = request.headers.get("accept") || "";
   const isBrowserPageNavigation =
     request.method === "GET" &&
@@ -218,6 +235,9 @@ export async function middleware(request: NextRequest) {
     });
     if (request.cookies.has(LEGACY_AUTH_COOKIE_NAME)) {
       res.cookies.delete(LEGACY_AUTH_COOKIE_NAME);
+    }
+    if (request.cookies.has(LEGACY_ENTRY_PASS_COOKIE_NAME)) {
+      res.cookies.delete(LEGACY_ENTRY_PASS_COOKIE_NAME);
     }
     return res;
   }

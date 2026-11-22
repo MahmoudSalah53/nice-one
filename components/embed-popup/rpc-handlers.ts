@@ -931,100 +931,19 @@ export const rpcHandlers = {
 
   checkout: async (data: { payload?: string | unknown }) => {
     const logPrefix = "[CHECKOUT RPC]";
-    console.log(`${logPrefix} 🔵 checkout RPC handler called!`);
-    console.log(`${logPrefix} RPC data received:`, data);
-
-    try {
-      const payload = parsePayload(data);
-      console.log(`${logPrefix} Parsed payload:`, payload);
-
-      const country =
-        payload?.country ?? payload?.countryCode ?? payload?.country_code;
-      const phone_number =
-        payload?.phone_number ?? payload?.phoneNumber ?? payload?.phone;
-      const email = payload?.email ?? payload?.emailAddress;
-
-      if (!country || typeof country !== "string") {
-        console.error(`${logPrefix} Invalid country provided:`, payload);
-        return createErrorResponse("Invalid country");
-      }
-
-      const countryTrimmed = country.trim();
-      const isSA = countryTrimmed.toUpperCase() === "SA";
-
-      let phoneOrEmail: string;
-      if (isSA) {
-        if (!phone_number || typeof phone_number !== "string") {
-          console.error(`${logPrefix} phone_number required for country SA`);
-          return createErrorResponse("phone_number required for country SA");
-        }
-        phoneOrEmail = String(phone_number).trim();
-        if (!phoneOrEmail) {
-          return createErrorResponse("phone_number is required");
-        }
-        // SA phone: exactly 9 digits, must start with 5
-        if (!/^5\d{8}$/.test(phoneOrEmail)) {
-          return createErrorResponse(
-            "phone_number must be exactly 9 digits and start with 5 (e.g. 501234567)",
-          );
-        }
-      } else {
-        if (!email || typeof email !== "string") {
-          console.error(
-            `${logPrefix} email required for country other than SA`,
-            payload,
-          );
-          return createErrorResponse(
-            "email required for country other than SA",
-          );
-        }
-        phoneOrEmail = String(email).trim();
-        if (!phoneOrEmail) {
-          return createErrorResponse("email is required");
-        }
-      }
-
-      console.log(
-        `${logPrefix} ✅ Received checkout RPC call country="${countryTrimmed}", ${isSA ? "phone_number" : "email"}="${phoneOrEmail}"`,
-      );
-
-      const result = await executeAction(
-        "checkout",
-        { country: countryTrimmed, phoneOrEmail },
-        () => {
-          if (typeof SiteAutomation.checkout !== "function") {
-            console.error("SiteAutomation.checkout method not found");
-            return false;
-          }
-          return (SiteAutomation.checkout as (
-            country: string,
-            phoneOrEmail: string,
-          ) => boolean)(countryTrimmed, phoneOrEmail);
-        },
-      );
-
-      if (result.success) {
-        console.log(
-          `${logPrefix} Checkout successful country="${countryTrimmed}"`,
+    console.log(`${logPrefix} 🔵 checkout RPC handler called (blocked in demo mode)`, data);
+    if (typeof window !== "undefined") {
+      try {
+        window.parent?.postMessage(
+          { type: "niceone-demo-checkout-blocked" },
+          "*",
         );
-        return createSuccessResponse({
-          country: countryTrimmed,
-          ...(isSA ? { phone_number: phoneOrEmail } : { email: phoneOrEmail }),
-        });
-      } else {
-        console.error(
-          `${logPrefix} Checkout FAILED country="${countryTrimmed}"`,
-        );
-        return createErrorResponse(result.error || "Checkout failed");
+      } catch {
+        // ignore
       }
-    } catch (error) {
-      console.error(
-        `${logPrefix} Error processing checkout RPC call:`,
-        error,
-      );
-      return createErrorResponse(
-        error instanceof Error ? error.message : String(error),
-      );
     }
+    return createErrorResponse(
+      "This is a technical demo environment by EraCoda. Real checkout is disabled — please visit https://niceonesa.com to complete orders.",
+    );
   },
 };

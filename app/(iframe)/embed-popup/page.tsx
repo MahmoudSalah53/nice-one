@@ -185,27 +185,28 @@ export default function EmbedPopupPage() {
         const parentUrl = data?.url ?? "";
         if (parentUrl) {
           setCurrentPageUrl(parentUrl);
-          console.log("[Embed Iframe] Resolved URL:", parentUrl);
-          // Load node CSS
-          (async () => {
-            try {
-              const cssUrl = "/css/globals_node.css";
-              const response = await fetch(cssUrl);
-              if (response.ok) {
-                const cssContent = await response.text();
-                const styleId = "dynamic-globals-css";
-                const styleElement = document.getElementById(
-                  styleId,
-                ) as HTMLStyleElement;
-                if (styleElement) {
-                  styleElement.textContent = cssContent;
-                  console.log("[Embed Iframe] ✅ Injected node CSS");
+          // Only inject node CSS if not already loaded on mount
+          const styleElement = document.getElementById(
+            "dynamic-globals-css",
+          ) as HTMLStyleElement | null;
+          if (!styleElement || !styleElement.textContent) {
+            (async () => {
+              try {
+                const response = await fetch("/css/globals_node.css");
+                if (response.ok) {
+                  const cssContent = await response.text();
+                  const el = document.getElementById(
+                    "dynamic-globals-css",
+                  ) as HTMLStyleElement | null;
+                  if (el && !el.textContent) {
+                    el.textContent = cssContent;
+                  }
                 }
+              } catch (e) {
+                console.error("[Embed Iframe] Error loading node CSS", e);
               }
-            } catch (e) {
-              console.error("[Embed Iframe] Error loading node CSS", e);
-            }
-          })();
+            })();
+          }
         }
 
         // Dispatch custom event for RPC senders to pick up

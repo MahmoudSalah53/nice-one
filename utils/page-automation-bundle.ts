@@ -647,33 +647,59 @@ function init(): void {
   console.log("[Page Automation] Setting up callbacks...");
 
   if (isScriptTagMode) {
-    // Script tag mode: send DOM updates to iframe
-    setChangeDetectionCallback((data) => {
-      handleChangeDetection(data);
-      // Also send updated DOM to iframe
-      setTimeout(() => {
+    let domSyncTimerA: number | null = null;
+    let domSyncTimerB: number | null = null;
+
+    const scheduleIframeDOMSync = (delayMs: number, secondPassMs?: number) => {
+      if (domSyncTimerA !== null) {
+        window.clearTimeout(domSyncTimerA);
+        domSyncTimerA = null;
+      }
+      if (domSyncTimerB !== null) {
+        window.clearTimeout(domSyncTimerB);
+        domSyncTimerB = null;
+      }
+      domSyncTimerA = window.setTimeout(() => {
+        domSyncTimerA = null;
         const newDOM = collectDOM();
         lastDOMSnapshot = newDOM;
         sendDOMToIframe(newDOM);
-      }, 200);
+      }, delayMs);
+      if (typeof secondPassMs === "number") {
+        domSyncTimerB = window.setTimeout(() => {
+          domSyncTimerB = null;
+          const newDOM = collectDOM();
+          lastDOMSnapshot = newDOM;
+          sendDOMToIframe(newDOM);
+        }, secondPassMs);
+      }
+    };
+
+    // Script tag mode: send debounced DOM updates to iframe (avoid duplicate back-to-back DOM walks)
+    setChangeDetectionCallback((data) => {
+      window.postMessage(
+        {
+          type: "voice-agent-element-changed",
+          data,
+        },
+        "*",
+      );
+      scheduleIframeDOMSync(250);
     });
 
-    // ⚠️ CHANGED: setAddedOrRemovedCallback is now setDOMChangeCallback internally
-    // but the exported name is still setAddedOrRemovedCallback for compatibility
     setAddedOrRemovedCallback(() => {
-      handleDOMChange();
-      // Also send updated DOM to iframe
-      const newDOM = collectDOM();
-      lastDOMSnapshot = newDOM;
-      sendDOMToIframe(newDOM);
+      scheduleIframeDOMSync(300);
     });
 
     setUrlChangeCallback(() => {
-      handleUrlChange();
-      // Also send updated DOM to iframe
-      const newDOM = collectDOM();
-      lastDOMSnapshot = newDOM;
-      sendDOMToIframe(newDOM);
+      scheduleIframeDOMSync(350);
+    });
+
+    // Listen for niceone-frame-load updates with debouncing
+    window.addEventListener("message", (event: MessageEvent) => {
+      if (event.data && event.data.type === "niceone-frame-load") {
+        scheduleIframeDOMSync(450, 1400);
+      }
     });
 
     // Create iframe
@@ -685,22 +711,8 @@ function init(): void {
     setUrlChangeCallback(handleUrlChange);
   }
 
-  // Initialize message handler (for extension mode communication + niceone-frame-load updates)
-  window.addEventListener("message", (event: MessageEvent) => {
-    handleMessage(event);
-    if (event.data && event.data.type === "niceone-frame-load" && isScriptTagMode) {
-      setTimeout(() => {
-        const domData = collectDOM();
-        lastDOMSnapshot = domData;
-        sendDOMToIframe(domData);
-      }, 350);
-      setTimeout(() => {
-        const domData = collectDOM();
-        lastDOMSnapshot = domData;
-        sendDOMToIframe(domData);
-      }, 1200);
-    }
-  });
+  // Initialize message handler (for extension mode communication)
+  window.addEventListener("message", handleMessage);
 
   // Get initial DOM snapshot
   lastDOMSnapshot = collectDOM();

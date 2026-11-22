@@ -89,7 +89,12 @@ export async function getNiceOneSession(
   return cachedSession || { session: "", verifyToken: "", expiresAt: 0 };
 }
 
-function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: string): string {
+function buildHostShellHtml(
+  locale: "ar" | "en",
+  localPath: string,
+  search: string,
+  showCheckoutNoticeOnLoad = false,
+): string {
   const params = new URLSearchParams(search || "");
   params.set("__frame", "1");
   const initialFrameSrc = `${localPath}?${params.toString()}`;
@@ -106,7 +111,25 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
   <meta name="robots" content="noindex, nofollow, noarchive" />
   <title>${defaultTitle}</title>
   <link rel="icon" href="https://cdn.niceonesa.com/web/assets_v2/images/favicon.ico" sizes="32x32" />
+  <style id="ep-tab-guard-style">html { visibility: hidden; }</style>
+  <script>
+    (function () {
+      try {
+        if (window.sessionStorage.getItem("__ep_tab_verified") !== "1") {
+          var nextTarget = window.location.pathname + window.location.search + window.location.hash;
+          window.location.replace("/__auth/reenter?next=" + encodeURIComponent(nextTarget));
+          return;
+        }
+      } catch (e) {}
+      window.__epTabAuthorized = true;
+      var gs = document.getElementById("ep-tab-guard-style");
+      if (gs) gs.remove();
+    })();
+  </script>
   <style>
+    :root {
+      --ep-bar-h: 38px;
+    }
     html, body {
       margin: 0;
       padding: 0;
@@ -115,11 +138,63 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
       overflow: hidden;
       background: #ffffff;
     }
+    #eracoda-top-disclaimer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      min-height: 38px;
+      z-index: 2147483640;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 6px 14px;
+      background: linear-gradient(90deg, #0b1424 0%, #101c33 50%, #0b1424 100%);
+      border-bottom: 1px solid rgba(240, 165, 40, 0.35);
+      color: #cbd5e1;
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Roboto, sans-serif;
+      font-size: 12.5px;
+      line-height: 1.45;
+      text-align: center;
+      box-sizing: border-box;
+      flex-wrap: wrap;
+    }
+    #eracoda-top-disclaimer .ep-top-logo {
+      height: 13px;
+      width: auto;
+      display: block;
+      flex: 0 0 auto;
+    }
+    #eracoda-top-disclaimer .ep-top-sep {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.16);
+      flex: 0 0 auto;
+    }
+    #eracoda-top-disclaimer strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    #eracoda-top-disclaimer a {
+      color: #f0a528;
+      font-weight: 600;
+      text-decoration: none;
+      direction: ltr;
+      unicode-bidi: isolate;
+      margin-inline-start: 4px;
+    }
+    #eracoda-top-disclaimer a:hover {
+      text-decoration: underline;
+    }
     #niceone-live-frame {
       position: fixed;
-      inset: 0;
+      top: var(--ep-bar-h);
+      left: 0;
+      right: 0;
+      bottom: 0;
       width: 100vw;
-      height: 100vh;
+      height: calc(100vh - var(--ep-bar-h));
       border: none;
       margin: 0;
       padding: 0;
@@ -130,18 +205,245 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
       bottom: 0 !important;
       right: 0 !important;
     }
+    #eracoda-demo-checkout-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(7, 12, 22, 0.76);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Roboto, sans-serif;
+    }
+    #eracoda-demo-checkout-overlay.open {
+      display: flex;
+    }
+    #eracoda-demo-checkout-card {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      background: linear-gradient(180deg, #101c33 0%, #0b1424 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      color: #e2e8f0;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+    }
+    #eracoda-demo-checkout-close {
+      position: absolute;
+      top: 12px;
+      inset-inline-end: 12px;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, color .15s;
+    }
+    #eracoda-demo-checkout-close:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+    }
+    #eracoda-demo-checkout-logo {
+      height: 28px;
+      width: auto;
+      display: block;
+      margin: 0 auto 16px;
+    }
+    #eracoda-demo-checkout-title {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    #eracoda-demo-checkout-body {
+      margin: 0 0 22px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #cbd5e1;
+    }
+    #eracoda-demo-checkout-body strong {
+      color: #f0a528;
+      font-weight: 600;
+    }
+    .eracoda-demo-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #eracoda-demo-checkout-go {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      background: #f0a528;
+      color: #0b1424;
+      font-size: 14.5px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    #eracoda-demo-checkout-go:hover {
+      background: #f5b942;
+    }
+    #eracoda-demo-checkout-back {
+      width: 100%;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    #eracoda-demo-checkout-back:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
+  <div id="eracoda-top-disclaimer" dir="${locale === "ar" ? "rtl" : "ltr"}">
+    <img class="ep-top-logo" src="/eracoda-logo-dark.png" alt="EraCoda" />
+    <span class="ep-top-sep" aria-hidden="true"></span>
+    <span id="eracoda-top-disclaimer-text"></span>
+  </div>
+
   <iframe
     id="niceone-live-frame"
-    src="${initialFrameSrc}"
+    src="about:blank"
     allow="fullscreen *; geolocation *; autoplay *; clipboard-write *"
   ></iframe>
 
+  <div id="eracoda-demo-checkout-overlay" role="dialog" aria-modal="true" aria-labelledby="eracoda-demo-checkout-title">
+    <div id="eracoda-demo-checkout-card">
+      <button type="button" id="eracoda-demo-checkout-close" aria-label="Close">&times;</button>
+      <img id="eracoda-demo-checkout-logo" src="/eracoda-logo-dark.png" alt="EraCoda" />
+      <h2 id="eracoda-demo-checkout-title">هذا الموقع للعرض والتجربة فقط</h2>
+      <p id="eracoda-demo-checkout-body"></p>
+      <div class="eracoda-demo-actions">
+        <a id="eracoda-demo-checkout-go" href="https://niceonesa.com/${locale}" target="_blank" rel="noopener noreferrer"></a>
+        <button type="button" id="eracoda-demo-checkout-back"></button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
+      if (!window.__epTabAuthorized) return;
+      var INITIAL_FRAME_SRC = ${JSON.stringify(initialFrameSrc)};
       var frame = document.getElementById("niceone-live-frame");
+      var topBar = document.getElementById("eracoda-top-disclaimer");
+      var topBarText = document.getElementById("eracoda-top-disclaimer-text");
+      var checkoutOverlay = document.getElementById("eracoda-demo-checkout-overlay");
+      var checkoutCard = document.getElementById("eracoda-demo-checkout-card");
+      var checkoutTitle = document.getElementById("eracoda-demo-checkout-title");
+      var checkoutBody = document.getElementById("eracoda-demo-checkout-body");
+      var checkoutGo = document.getElementById("eracoda-demo-checkout-go");
+      var checkoutBack = document.getElementById("eracoda-demo-checkout-back");
+      var checkoutClose = document.getElementById("eracoda-demo-checkout-close");
+
+      function syncTopBarHeight() {
+        if (!topBar) return;
+        var h = topBar.offsetHeight || 38;
+        document.documentElement.style.setProperty("--ep-bar-h", h + "px");
+      }
+
+      function updateTopDisclaimerBar(langHint) {
+        if (!topBar || !topBarText) return;
+        var activeLang =
+          langHint === "ar" || langHint === "en"
+            ? langHint
+            : /^\\/en(?:\\/|$)/i.test(window.location.pathname)
+              ? "en"
+              : "ar";
+        if (activeLang === "en") {
+          topBar.setAttribute("dir", "ltr");
+          topBarText.innerHTML =
+            '<strong>Technical Demo</strong> by EraCoda for AI voice assistant preview — Not the official Nice One store. For real shopping visit <a href="https://niceonesa.com/en" target="_blank" rel="noopener noreferrer">niceonesa.com</a>';
+        } else {
+          topBar.setAttribute("dir", "rtl");
+          topBarText.innerHTML =
+            'هذه <strong>بيئة عرض وتجربة تقنية</strong> من EraCoda لاستعراض المساعد الصوتي، وليست الموقع الرسمي — للتسوق الفعلي: <a href="https://niceonesa.com/ar" target="_blank" rel="noopener noreferrer">niceonesa.com</a>';
+        }
+        syncTopBarHeight();
+      }
+
+      updateTopDisclaimerBar(${JSON.stringify(locale)});
+      window.addEventListener("resize", syncTopBarHeight);
+
+      if (frame) {
+        frame.src = INITIAL_FRAME_SRC;
+      }
+
+      function isCheckoutPath(pathStr) {
+        return /(?:^|\\/)checkout(?:\\/|\\?|#|$)/i.test(String(pathStr || ""));
+      }
+
+      window.__showEraCodaCheckoutModal = function (preferredLang) {
+        if (!checkoutOverlay || !checkoutCard) return;
+        var activeLang =
+          preferredLang === "ar" || preferredLang === "en"
+            ? preferredLang
+            : /^\\/en(?:\\/|$)/i.test(window.location.pathname)
+              ? "en"
+              : "ar";
+
+        if (activeLang === "en") {
+          checkoutCard.setAttribute("dir", "ltr");
+          checkoutTitle.textContent = "Demo Environment Only";
+          checkoutBody.innerHTML =
+            "This site is a technical demo by <strong>EraCoda</strong> to showcase the AI voice assistant. Checkout and real orders are disabled here. To complete your purchase, please visit the official Nice One store.";
+          checkoutGo.textContent = "Go to Official Nice One Store (niceonesa.com)";
+          checkoutGo.setAttribute("href", "https://niceonesa.com/en");
+          checkoutBack.textContent = "Continue Browsing";
+        } else {
+          checkoutCard.setAttribute("dir", "rtl");
+          checkoutTitle.textContent = "هذا الموقع للعرض والتجربة فقط";
+          checkoutBody.innerHTML =
+            "هذه بيئة عرض تقنية مقدّمة من <strong>EraCoda</strong> لتجربة المساعد الصوتي الذكي، ولا يمكن إتمام عمليات الشراء أو الدفع من خلالها. لإتمام طلبك والتسوق الفعلي يُرجى التوجه إلى الموقع الرسمي لمتجر نايس ون.";
+          checkoutGo.textContent = "التوجه إلى موقع نايس ون الرسمي (niceonesa.com)";
+          checkoutGo.setAttribute("href", "https://niceonesa.com/ar");
+          checkoutBack.textContent = "العودة للتصفح";
+        }
+        checkoutOverlay.classList.add("open");
+      };
+
+      function closeCheckoutModal() {
+        if (checkoutOverlay) checkoutOverlay.classList.remove("open");
+      }
+
+      if (checkoutClose) checkoutClose.addEventListener("click", closeCheckoutModal);
+      if (checkoutBack) checkoutBack.addEventListener("click", closeCheckoutModal);
+      if (checkoutOverlay) {
+        checkoutOverlay.addEventListener("click", function (ev) {
+          if (ev.target === checkoutOverlay) closeCheckoutModal();
+        });
+      }
+      window.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") closeCheckoutModal();
+      });
+      if (${showCheckoutNoticeOnLoad ? "true" : "false"}) {
+        setTimeout(function () {
+          window.__showEraCodaCheckoutModal(${JSON.stringify(locale)});
+        }, 250);
+      }
 
       function toFrameUrl(pathname, search, hash) {
         var params = new URLSearchParams(search || "");
@@ -181,6 +483,10 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
 
           var targetPath = parsed.pathname || "/${locale}";
           if (targetPath === "/") targetPath = "/${locale}";
+          if (isCheckoutPath(targetPath)) {
+            window.__showEraCodaCheckoutModal(/^\\/en(?:\\/|$)/i.test(targetPath) ? "en" : "ar");
+            return true;
+          }
           var targetSearchParams = new URLSearchParams(parsed.search || "");
           targetSearchParams.delete("__frame");
           var targetSearch = targetSearchParams.toString() ? "?" + targetSearchParams.toString() : "";
@@ -189,6 +495,7 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
 
           window.history.pushState(null, "", cleanUrl);
           window.__niceoneCurrentUrl = "https://niceonesa.com" + cleanUrl;
+          updateTopDisclaimerBar(/^\\/en(?:\\/|$)/i.test(targetPath) ? "en" : "ar");
 
           if (frame) {
             try {
@@ -255,10 +562,15 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
             document.title = title;
           }
           window.__niceoneCurrentUrl = "https://niceonesa.com" + cleanUrl;
+          updateTopDisclaimerBar(/^\\/en(?:\\/|$)/i.test(path) ? "en" : "ar");
         }
 
         if (event.data.type === "niceone-frame-navigate" && event.data.url) {
           window.__niceoneLiveNavigate(event.data.url);
+        }
+
+        if (event.data.type === "niceone-demo-checkout-blocked") {
+          window.__showEraCodaCheckoutModal(event.data.lang);
         }
       });
 
@@ -272,6 +584,7 @@ function buildHostShellHtml(locale: "ar" | "en", localPath: string, search: stri
 
   <script>
     (function () {
+      if (!window.__epTabAuthorized) return;
       var s = document.createElement("script");
       s.src = "/page-automation.js";
       s.setAttribute("data-lk-sandbox-id", window.location.origin);
@@ -296,6 +609,11 @@ function transformNiceOneHtml(
   );
 
   const bridgeScript = `
+<style id="eracoda-hide-promo-bar">
+  #__nuxt div.relative.z-3.text-xs.px-3.py-3.font-bold.text-center {
+    display: none !important;
+  }
+</style>
 <script>
   (function () {
     // 1. Pre-seed _session and _verify_token cookies before Nuxt boots
@@ -306,6 +624,9 @@ function transformNiceOneHtml(
     }
     if (VERIFY_TOKEN_VAL) {
       document.cookie = "_verify_token=" + encodeURIComponent(VERIFY_TOKEN_VAL) + "; path=/; max-age=300; SameSite=Lax";
+    }
+    if (document.cookie.indexOf("_hide_smart_banner=") === -1) {
+      document.cookie = "_hide_smart_banner=true; path=/; max-age=604800; SameSite=Lax";
     }
 
     // 2. Strip internal __frame=1 query param before Nuxt router initializes
@@ -360,9 +681,110 @@ function transformNiceOneHtml(
       };
     }
 
-    // 4. Sync navigation state with parent Host Shell
-    function notifyParent() {
+    // 4. Sync navigation state with parent Host Shell + Demo Checkout Guard
+    function isCheckoutPath(urlStr) {
+      return /(?:^|\\/)checkout(?:\\/|\\?|#|$)/i.test(String(urlStr || ""));
+    }
+
+    function detectCurrentLang() {
+      return /^\\/en(?:\\/|$)/i.test(window.location.pathname) ? "en" : "ar";
+    }
+
+    function normalizeBtnText(raw) {
+      return String(raw || "")
+        .replace(/[\\u064B-\\u065F\\u0670\\u0640]/g, "")
+        .replace(/[إأآ]/g, "ا")
+        .replace(/ة/g, "ه")
+        .replace(/\\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+    var CHECKOUT_EXACT_TEXTS = {
+      "checkout": true,
+      "continue to checkout": true,
+      "proceed to checkout": true,
+      "go to checkout": true,
+      "complete order": true,
+      "place order": true,
+      "اتمام الطلب": true,
+      "المتابعه للدفع": true,
+      "متابعه للدفع": true,
+      "انهاء التسوق": true,
+      "اكمل الطلب": true,
+      "اتمام الشراء": true,
+      "اتمام عمليه الشراء": true,
+      "الانتقال للدفع": true,
+      "تابع للدفع": true,
+      "تأكيد الطلب": true,
+      "تاكيد الطلب": true,
+    };
+
+    var CART_ONLY_CHECKOUT_TEXTS = {
+      "الدفع": true,
+      "الدفع الان": true,
+      "ادفع الان": true,
+      "pay": true,
+      "pay now": true,
+      "apple pay": true,
+    };
+
+    function isCheckoutTriggerElement(el) {
+      if (!el) return false;
+      var href = (el.getAttribute && el.getAttribute("href")) || "";
+      if (href && isCheckoutPath(href)) return true;
+
+      var meta = (
+        ((el.getAttribute && el.getAttribute("data-testid")) || "") +
+        " " +
+        ((el.getAttribute && el.getAttribute("aria-label")) || "") +
+        " " +
+        (el.id || "")
+      ).toLowerCase();
+      if (meta.indexOf("checkout") !== -1) return true;
+
+      var txt = normalizeBtnText(el.innerText || el.textContent || "");
+      if (!txt || txt.length > 60) return false;
+      if (CHECKOUT_EXACT_TEXTS[txt]) return true;
+
+      var onCartPage = /(?:^|\\/)cart(?:\\/|\\?|#|$)/i.test(window.location.pathname);
+      if (onCartPage) {
+        if (CART_ONLY_CHECKOUT_TEXTS[txt]) return true;
+        if (
+          txt.indexOf("checkout") !== -1 ||
+          txt.indexOf("اتمام الطلب") !== -1 ||
+          txt.indexOf("المتابعه للدفع") !== -1 ||
+          txt.indexOf("انهاء التسوق") !== -1 ||
+          txt.indexOf("اتمام الشراء") !== -1
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function notifyCheckoutBlocked() {
+      var lang = detectCurrentLang();
       if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: "niceone-demo-checkout-blocked", lang: lang },
+          "*"
+        );
+      } else {
+        window.alert(
+          lang === "en"
+            ? "Demo environment only by EraCoda. Please visit https://niceonesa.com/en to complete real orders."
+            : "هذا الموقع للعرض والتجربة فقط من EraCoda. لإتمام الطلبات الفعلية يرجى زيارة الموقع الرسمي https://niceonesa.com/ar"
+        );
+      }
+    }
+
+    var notifyTimer = null;
+    function notifyParent() {
+      if (!window.parent || window.parent === window) return;
+      if (notifyTimer) clearTimeout(notifyTimer);
+      notifyTimer = setTimeout(function () {
+        notifyTimer = null;
         var sp = new URLSearchParams(window.location.search || "");
         sp.delete("__frame");
         var cleanSearch = sp.toString() ? "?" + sp.toString() : "";
@@ -376,18 +798,26 @@ function transformNiceOneHtml(
           },
           "*"
         );
-      }
+      }, 120);
     }
 
     var origPushState = history.pushState;
-    history.pushState = function () {
+    history.pushState = function (_state, _title, url) {
+      if (url && isCheckoutPath(url)) {
+        notifyCheckoutBlocked();
+        return;
+      }
       var ret = origPushState.apply(this, arguments);
       setTimeout(notifyParent, 50);
       return ret;
     };
 
     var origReplaceState = history.replaceState;
-    history.replaceState = function () {
+    history.replaceState = function (_state, _title, url) {
+      if (url && isCheckoutPath(url)) {
+        notifyCheckoutBlocked();
+        return;
+      }
       var ret = origReplaceState.apply(this, arguments);
       setTimeout(notifyParent, 50);
       return ret;
@@ -406,6 +836,10 @@ function transformNiceOneHtml(
 
     window.__niceoneSpaNavigate = function (targetUrl) {
       try {
+        if (isCheckoutPath(targetUrl)) {
+          notifyCheckoutBlocked();
+          return true;
+        }
         var curLang = (window.location.pathname.split("/")[1] || "").toLowerCase();
         var nextLang = (targetUrl.split("?")[0].split("#")[0].split("/")[1] || "").toLowerCase();
         if (curLang && nextLang && curLang !== nextLang) {
@@ -468,6 +902,19 @@ function transformNiceOneHtml(
       function (e) {
         var target = e.target;
         if (!target || typeof target.closest !== "function") return;
+
+        // Intercept any Checkout button or Checkout link before Nuxt / login modal handles it
+        var clickable = target.closest("button, a, [role='button'], .van-button");
+        if (clickable && isCheckoutTriggerElement(clickable)) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === "function") {
+            e.stopImmediatePropagation();
+          }
+          notifyCheckoutBlocked();
+          return;
+        }
+
         var link = target.closest("a[href]");
         if (!link) return;
         var rawHref = link.getAttribute("href") || "";
@@ -483,6 +930,15 @@ function transformNiceOneHtml(
 
         try {
           var parsed = new URL(rawHref, window.location.origin);
+          if (isCheckoutPath(parsed.pathname)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === "function") {
+              e.stopImmediatePropagation();
+            }
+            notifyCheckoutBlocked();
+            return;
+          }
           if (parsed.hostname === "niceonesa.com" || parsed.hostname === "www.niceonesa.com") {
             e.preventDefault();
             e.stopPropagation();
@@ -527,7 +983,14 @@ export async function handleNiceOneProxyRequest(
 
   // Top-level browser navigation -> Serve the persistent Host Shell with the Voice Agent
   if (!isFrameRequest) {
-    const shellHtml = buildHostShellHtml(locale, localPath, cleanSearch);
+    const isCheckoutRoute = /(?:^|\/)checkout(?:\/|$)/i.test(localPath);
+    const effectivePath = isCheckoutRoute ? `/${locale}/cart` : localPath;
+    const shellHtml = buildHostShellHtml(
+      locale,
+      effectivePath,
+      cleanSearch,
+      isCheckoutRoute,
+    );
     return new NextResponse(shellHtml, {
       status: 200,
       headers: {
@@ -536,6 +999,20 @@ export async function handleNiceOneProxyRequest(
         Vary: "Sec-Fetch-Dest",
       },
     });
+  }
+
+  // Never proxy Nice One checkout pages inside the frame either
+  if (/(?:^|\/)checkout(?:\/|$)/i.test(localPath)) {
+    return new NextResponse(
+      `<!DOCTYPE html><html><body><script>try{window.parent.postMessage({type:"niceone-demo-checkout-blocked",lang:${JSON.stringify(locale)}},"*");history.back();}catch(e){window.location.replace(${JSON.stringify(`/${locale}/cart?__frame=1`)});}</script></body></html>`,
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+    );
   }
 
   // Inside iframe: fetch session & live page from niceonesa.com in parallel
