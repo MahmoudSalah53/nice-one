@@ -48,7 +48,7 @@ export function buildGateHtml(): string {
       margin-bottom: 22px;
     }
     .notice {
-      margin: 0 0 28px;
+      margin: 0 0 14px;
       font-size: 14.5px;
       line-height: 1.9;
       color: #94a3b8;
@@ -65,6 +65,28 @@ export function buildGateHtml(): string {
       unicode-bidi: isolate;
     }
     .notice a:hover { text-decoration: underline; }
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 0 26px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #e2e8f0;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .privacy-badge svg {
+      color: #34d399;
+      flex: 0 0 auto;
+    }
+    .privacy-badge strong {
+      color: #6ee7b7;
+      font-weight: 600;
+    }
     .card {
       width: 100%;
       max-width: 380px;
@@ -162,9 +184,16 @@ export function buildGateHtml(): string {
 
     <p class="notice">
       هذه <strong>بيئة عرض تقنية</strong> من EraCoda لتجربة المساعد الصوتي، وليست الموقع الرسمي لمتجر نايس ون.<br />
-      للتسوق وإتمام الطلبات يُرجى زيارة الموقع الرسمي <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a><br />
-      لا نقوم بجمع أو تخزين أي بيانات خاصة، ويقتصر عمل النظام على البيانات العامة المتاحة للعميل فقط.
+      للتسوق وإتمام الطلبات يُرجى زيارة الموقع الرسمي <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a>
     </p>
+
+    <div class="privacy-badge">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span><strong>تنويه الخصوصية:</strong> لا نقوم بسحب أو حفظ أي بيانات خاصة، ولا نملك أي صلاحية وصول سوى للبيانات العامة المتاحة للعميل على الصفحة فقط.</span>
+    </div>
 
     <form class="card" id="f" autocomplete="off" novalidate>
       <label class="lbl" for="pw">كلمة المرور</label>
