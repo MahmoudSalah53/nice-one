@@ -105,74 +105,91 @@ function buildGateHtml(): string {
       padding: 0;
       min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Roboto, sans-serif;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-      color: #0f172a;
+      background:
+        radial-gradient(ellipse 75% 55% at 50% 0%, rgba(240, 165, 40, 0.14) 0%, transparent 60%),
+        radial-gradient(circle at 50% 18%, #1a2d50 0%, #0d172a 55%, #070d1a 100%);
+      color: #f1f5f9;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 28px 16px;
+      padding: 36px 20px;
       -webkit-font-smoothing: antialiased;
     }
-    .container {
+    .page-wrap {
       width: 100%;
-      max-width: 440px;
+      max-width: 820px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+    .hero-block {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 34px;
+    }
     .brand-logo {
-      height: 36px;
+      height: 46px;
       width: auto;
-      max-width: 220px;
+      max-width: 280px;
       object-fit: contain;
       display: block;
-      margin-bottom: 18px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 6px 18px rgba(240, 165, 40, 0.18));
     }
     .disclaimer {
       width: 100%;
-      text-align: center;
-      margin: 0 0 24px;
-      font-size: 0.9rem;
-      line-height: 1.85;
-      color: #475569;
+      margin: 0;
+      font-size: clamp(0.98rem, 1.35vw, 1.12rem);
+      line-height: 2;
+      color: #cbd5e1;
+      letter-spacing: 0.01em;
     }
     .disclaimer p {
-      margin: 0;
+      margin: 0 0 6px;
+    }
+    .disclaimer p:last-child {
+      margin-bottom: 0;
     }
     .disclaimer strong {
-      color: #14223d;
+      color: #ffffff;
       font-weight: 700;
     }
     .official-link {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      color: #14223d;
+      gap: 5px;
+      color: #f6c25b;
       font-weight: 700;
       text-decoration: none;
-      border-bottom: 2px solid #f0a528;
-      padding-bottom: 1px;
-      margin-inline-start: 4px;
+      border-bottom: 2px solid rgba(240, 165, 40, 0.65);
+      padding: 0 2px 1px;
+      margin-inline-start: 6px;
       direction: ltr;
       transition: color 0.16s ease, border-color 0.16s ease;
     }
     .official-link:hover {
-      color: #d9880f;
-      border-color: #d9880f;
+      color: #ffffff;
+      border-color: #f0a528;
     }
     .card {
       width: 100%;
+      max-width: 430px;
       background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 26px 24px 22px;
+      color: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      padding: 28px 26px 24px;
       box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.04),
-        0 12px 32px rgba(15, 23, 42, 0.06);
+        0 24px 64px rgba(0, 0, 0, 0.48),
+        0 4px 14px rgba(0, 0, 0, 0.2);
     }
     .field-label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: #1e293b;
       margin-bottom: 8px;
@@ -203,7 +220,7 @@ function buildGateHtml(): string {
     input[type="password"]:focus,
     input[type="text"]:focus {
       border-color: #14223d;
-      box-shadow: 0 0 0 3px rgba(20, 34, 61, 0.1);
+      box-shadow: 0 0 0 3px rgba(20, 34, 61, 0.12);
     }
     .toggle-btn {
       position: absolute;
@@ -308,33 +325,35 @@ function buildGateHtml(): string {
       text-align: center;
     }
     .footer-note {
-      margin-top: 20px;
-      font-size: 0.75rem;
-      color: #94a3b8;
+      margin-top: 22px;
+      font-size: 0.76rem;
+      color: rgba(148, 163, 184, 0.72);
       text-align: center;
       direction: ltr;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="/eracoda-logo-light.png" alt="EraCoda" class="brand-logo" />
+  <div class="page-wrap">
+    <header class="hero-block">
+      <img src="/eracoda-logo-dark.png" alt="EraCoda" class="brand-logo" />
 
-    <div class="disclaimer">
-      <p>هذه المنصة <strong>بيئة تجربة وعرض تقني</strong> مقدّمة من <strong>EraCoda</strong> لاستعراض المساعد الصوتي الذكي،</p>
-      <p>وليست الموقع الرسمي لمتجر نايس ون ولا تُستخدم لإتمام طلبات حقيقية.</p>
-      <p>
-        للتسوق والتعامل المباشر يُرجى زيارة الموقع الرسمي:
-        <a class="official-link" href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">
-          niceonesa.com
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <line x1="10" y1="14" x2="21" y2="3"></line>
-          </svg>
-        </a>
-      </p>
-    </div>
+      <div class="disclaimer">
+        <p>هذه المنصة <strong>بيئة تجربة وعرض تقني</strong> مقدّمة من <strong>EraCoda</strong> لاستعراض المساعد الصوتي الذكي،</p>
+        <p>وليست الموقع الرسمي لمتجر نايس ون ولا تُستخدم لإتمام أي طلبات أو معاملات حقيقية.</p>
+        <p>
+          للتسوق المباشر وإتمام الطلبات عبر المتجر الرسمي يُرجى زيارة الموقع الأصلي:
+          <a class="official-link" href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">
+            niceonesa.com
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+        </p>
+      </div>
+    </header>
 
     <main class="card">
       <form id="gate-form" autocomplete="off" novalidate>
