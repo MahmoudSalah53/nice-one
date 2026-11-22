@@ -48,7 +48,7 @@ export function buildGateHtml(): string {
       margin-bottom: 22px;
     }
     .notice {
-      margin: 0 0 24px;
+      margin: 0 0 14px;
       font-size: 14.5px;
       line-height: 1.9;
       color: #94a3b8;
@@ -70,7 +70,7 @@ export function buildGateHtml(): string {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin: 20px 0 0;
+      margin: 0 0 26px;
       padding: 9px 16px;
       border-radius: 10px;
       background: rgba(16, 185, 129, 0.08);
@@ -187,6 +187,14 @@ export function buildGateHtml(): string {
       للتسوق وإتمام الطلبات يُرجى زيارة الموقع الرسمي <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a>
     </p>
 
+    <div class="privacy-badge">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span><strong>تنويه الخصوصية:</strong> لا نقوم بسحب أو حفظ أي بيانات خاصة، ولا نملك أي صلاحية وصول سوى للبيانات العامة المتاحة للعميل على الصفحة فقط.</span>
+    </div>
+
     <form class="card" id="f" autocomplete="off" novalidate>
       <label class="lbl" for="pw">كلمة المرور</label>
       <div class="field">
@@ -204,14 +212,6 @@ export function buildGateHtml(): string {
       <button class="btn" id="btn" type="submit" disabled>دخول</button>
       <div class="err" id="err" role="alert"></div>
     </form>
-
-    <div class="privacy-badge">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        <path d="m9 12 2 2 4-4"/>
-      </svg>
-      <span><strong>تنويه الخصوصية:</strong> لا نقوم بسحب أو حفظ أي بيانات خاصة، ولا نملك أي صلاحية وصول سوى للبيانات العامة المتاحة للعميل على الصفحة فقط.</span>
-    </div>
   </div>
 
   <script>
