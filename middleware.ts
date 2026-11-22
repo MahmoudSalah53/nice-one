@@ -5,6 +5,7 @@ const AUTH_COOKIE_NAME = "__ep_staging_auth_v2";
 const DEFAULT_ACCESS_PASSWORD = "ElectroPi@2026";
 
 const PUBLIC_BRAND_ASSETS = new Set([
+  "/eracoda-logo-light.png",
   "/eracoda-logo-dark.png",
   "/eracoda-icon.svg",
 ]);
@@ -104,163 +105,105 @@ function buildGateHtml(): string {
       padding: 0;
       min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Roboto, sans-serif;
-      background:
-        radial-gradient(ellipse 75% 55% at 50% 0%, rgba(240, 165, 40, 0.14) 0%, transparent 60%),
-        radial-gradient(circle at 50% 18%, #1a2d50 0%, #0d172a 55%, #070d1a 100%);
-      color: #f1f5f9;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: #0f172a;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px 14px;
+      padding: 28px 16px;
+      -webkit-font-smoothing: antialiased;
     }
-    .card {
-      width: min(94vw, 500px);
-      background: rgba(15, 25, 46, 0.92);
-      border: 1px solid rgba(240, 165, 40, 0.22);
-      border-radius: 22px;
-      padding: 30px 26px 24px;
-      box-shadow:
-        0 28px 70px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(14px);
-    }
-    .brand-header {
+    .container {
+      width: 100%;
+      max-width: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      text-align: center;
-      margin-bottom: 20px;
     }
     .brand-logo {
       height: 36px;
       width: auto;
-      max-width: 230px;
+      max-width: 220px;
       object-fit: contain;
       display: block;
-      margin-bottom: 12px;
-      filter: drop-shadow(0 4px 14px rgba(240, 165, 40, 0.16));
+      margin-bottom: 18px;
     }
-    .env-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 13px;
-      border-radius: 999px;
-      background: rgba(240, 165, 40, 0.12);
-      border: 1px solid rgba(240, 165, 40, 0.34);
-      color: #f6c25b;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
+    .disclaimer {
+      width: 100%;
+      text-align: center;
+      margin: 0 0 24px;
+      font-size: 0.9rem;
+      line-height: 1.85;
+      color: #475569;
     }
-    .env-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #f0a528;
-      box-shadow: 0 0 8px rgba(240, 165, 40, 0.8);
-    }
-    .notice-box {
-      background: rgba(20, 34, 61, 0.78);
-      border: 1px solid rgba(240, 165, 40, 0.28);
-      border-right: 3.5px solid #f0a528;
-      border-radius: 14px;
-      padding: 15px 16px;
-      margin-bottom: 20px;
-    }
-    .notice-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #f6c25b;
-      margin: 0 0 10px;
-    }
-    .notice-lines {
+    .disclaimer p {
       margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 0.84rem;
-      line-height: 1.65;
-      color: #cbd5e1;
     }
-    .notice-lines li strong {
-      color: #ffffff;
-      font-weight: 600;
+    .disclaimer strong {
+      color: #14223d;
+      font-weight: 700;
     }
     .official-link {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      margin-inline-start: 4px;
-      padding: 2px 10px;
-      border-radius: 999px;
-      background: rgba(240, 165, 40, 0.16);
-      border: 1px solid rgba(240, 165, 40, 0.45);
-      color: #fcd37d;
+      gap: 4px;
+      color: #14223d;
       font-weight: 700;
-      font-size: 0.82rem;
       text-decoration: none;
+      border-bottom: 2px solid #f0a528;
+      padding-bottom: 1px;
+      margin-inline-start: 4px;
       direction: ltr;
-      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      transition: color 0.16s ease, border-color 0.16s ease;
     }
     .official-link:hover {
-      background: rgba(240, 165, 40, 0.28);
-      border-color: #f0a528;
-      color: #ffffff;
+      color: #d9880f;
+      border-color: #d9880f;
     }
-    .notice-en {
-      margin-top: 11px;
-      padding-top: 9px;
-      border-top: 1px solid rgba(148, 163, 184, 0.16);
-      font-size: 0.74rem;
-      line-height: 1.5;
-      color: #94a3b8;
-      direction: ltr;
-      text-align: left;
-    }
-    .notice-en a {
-      color: #f6c25b;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+    .card {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 26px 24px 22px;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 12px 32px rgba(15, 23, 42, 0.06);
     }
     .field-label {
       display: block;
-      font-size: 0.83rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 7px;
+      color: #1e293b;
+      margin-bottom: 8px;
     }
     .field {
       position: relative;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     input[type="password"],
     input[type="text"] {
       width: 100%;
-      padding: 12px 44px 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.24);
-      background: rgba(7, 13, 26, 0.88);
-      color: #f8fafc;
+      height: 46px;
+      padding: 0 44px 0 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #0f172a;
       font-size: 0.95rem;
       direction: ltr;
       text-align: left;
       outline: none;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
     }
     input[type="password"]::placeholder,
     input[type="text"]::placeholder {
-      color: #64748b;
+      color: #94a3b8;
     }
     input[type="password"]:focus,
     input[type="text"]:focus {
-      border-color: #f0a528;
-      box-shadow: 0 0 0 3px rgba(240, 165, 40, 0.18);
+      border-color: #14223d;
+      box-shadow: 0 0 0 3px rgba(20, 34, 61, 0.1);
     }
     .toggle-btn {
       position: absolute;
@@ -269,49 +212,45 @@ function buildGateHtml(): string {
       transform: translateY(-50%);
       background: transparent;
       border: none;
-      color: #94a3b8;
+      color: #64748b;
       cursor: pointer;
-      padding: 5px;
+      padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.15s ease;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
     }
-    .toggle-btn:hover { color: #f6c25b; }
+    .toggle-btn:hover {
+      color: #14223d;
+      background: #f1f5f9;
+    }
     .consent-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 10px;
-      padding: 11px 13px;
-      margin-bottom: 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(11, 19, 36, 0.65);
+      padding: 8px 4px;
+      margin-bottom: 18px;
+      border-radius: 8px;
       cursor: pointer;
       user-select: none;
-      transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
-    }
-    .consent-row:hover {
-      border-color: rgba(240, 165, 40, 0.42);
-    }
-    .consent-row.checked {
-      border-color: rgba(240, 165, 40, 0.62);
-      background: rgba(240, 165, 40, 0.08);
+      transition: background 0.15s ease;
     }
     .consent-row.needs-consent {
-      border-color: rgba(248, 113, 113, 0.85);
-      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.16);
+      background: #fef2f2;
+      padding: 8px 10px;
+      outline: 1px solid #fecaca;
     }
     .consent-row input[type="checkbox"] {
       appearance: none;
       -webkit-appearance: none;
-      flex: 0 0 19px;
-      width: 19px;
-      height: 19px;
-      margin: 2px 0 0;
-      border-radius: 6px;
-      border: 1.5px solid #64748b;
-      background: rgba(7, 13, 26, 0.9);
+      flex: 0 0 18px;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      border-radius: 5px;
+      border: 1.5px solid #94a3b8;
+      background: #ffffff;
       display: grid;
       place-content: center;
       cursor: pointer;
@@ -323,128 +262,113 @@ function buildGateHtml(): string {
       height: 10px;
       transform: scale(0);
       transition: transform 0.14s ease;
-      background-color: #0b1324;
+      background-color: #ffffff;
       clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
     }
     .consent-row input[type="checkbox"]:checked {
-      border-color: #f0a528;
-      background: #f0a528;
+      border-color: #14223d;
+      background: #14223d;
     }
     .consent-row input[type="checkbox"]:checked::after {
       transform: scale(1);
     }
     .consent-text {
-      font-size: 0.81rem;
-      line-height: 1.55;
-      color: #cbd5e1;
-    }
-    .consent-text strong {
-      color: #ffffff;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #334155;
     }
     .submit-btn {
       width: 100%;
-      padding: 13px 16px;
-      border-radius: 12px;
+      height: 46px;
+      border-radius: 10px;
       border: none;
-      background: linear-gradient(135deg, #f5b942 0%, #e09112 100%);
-      color: #0b1324;
+      background: #14223d;
+      color: #ffffff;
       font-size: 0.95rem;
-      font-weight: 700;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(240, 165, 40, 0.25);
-      transition: opacity 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+      transition: background 0.16s ease, transform 0.1s ease, opacity 0.16s ease;
     }
     .submit-btn:hover:not(:disabled) {
-      opacity: 0.96;
-      box-shadow: 0 10px 28px rgba(240, 165, 40, 0.36);
+      background: #1d3156;
     }
     .submit-btn:active:not(:disabled) {
       transform: scale(0.99);
     }
     .submit-btn:disabled {
-      opacity: 0.4;
+      background: #e2e8f0;
+      color: #94a3b8;
       cursor: not-allowed;
-      box-shadow: none;
     }
     .err {
       margin-top: 12px;
       font-size: 0.83rem;
-      color: #fca5a5;
+      color: #dc2626;
       min-height: 20px;
       text-align: center;
+    }
+    .footer-note {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-align: center;
+      direction: ltr;
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <div class="brand-header">
-      <img src="/eracoda-logo-dark.png" alt="EraCoda" class="brand-logo" />
-      <span class="env-pill">
-        <span class="env-dot" aria-hidden="true"></span>
-        بيئة عرض وتجربة تقنية • Technical Demo
-      </span>
+  <div class="container">
+    <img src="/eracoda-logo-light.png" alt="EraCoda" class="brand-logo" />
+
+    <div class="disclaimer">
+      <p>هذه المنصة <strong>بيئة تجربة وعرض تقني</strong> مقدّمة من <strong>EraCoda</strong> لاستعراض المساعد الصوتي الذكي،</p>
+      <p>وليست الموقع الرسمي لمتجر نايس ون ولا تُستخدم لإتمام طلبات حقيقية.</p>
+      <p>
+        للتسوق والتعامل المباشر يُرجى زيارة الموقع الرسمي:
+        <a class="official-link" href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">
+          niceonesa.com
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </p>
     </div>
 
-    <section class="notice-box" aria-label="تنويه مهم">
-      <h2 class="notice-title">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-        تنويه مهم قبل المتابعة
-      </h2>
-      <ul class="notice-lines">
-        <li>هذه المنصة هي <strong>بيئة تجربة وعرض تقني</strong> مطوّرة من قِبل <strong>EraCoda</strong> في إطار التعاون واستعراض المساعد الصوتي الذكي، <strong>وليست الموقع الرسمي لمتجر نايس ون</strong>.</li>
-        <li>الهدف من هذه البيئة هو المعاينة والتجربة التقنية المعتمدة فقط، ولا تُستخدم لإتمام عمليات شراء فعلية أو جمع أي بيانات شخصية أو بنكية.</li>
-        <li>
-          للتسوق المباشر وإتمام الطلبات عبر المتجر الرسمي، يُرجى التوجه مباشرةً إلى الموقع الأصلي:
-          <a class="official-link" href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">
-            niceonesa.com
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
+    <main class="card">
+      <form id="gate-form" autocomplete="off" novalidate>
+        <label class="field-label" for="access-code">كلمة المرور</label>
+        <div class="field">
+          <input
+            id="access-code"
+            name="code"
+            type="password"
+            placeholder="••••••••••••"
+            autocomplete="off"
+            autofocus
+            required
+          />
+          <button type="button" class="toggle-btn" id="toggle-vis" aria-label="إظهار أو إخفاء كلمة المرور">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
             </svg>
-          </a>
-        </li>
-      </ul>
-      <div class="notice-en">
-        Demo &amp; evaluation showcase by <strong>EraCoda</strong> — not the official Nice One storefront. For real shopping, visit <a href="https://niceonesa.com" target="_blank" rel="noopener noreferrer">niceonesa.com</a>.
-      </div>
-    </section>
+          </button>
+        </div>
 
-    <form id="gate-form" autocomplete="off" novalidate>
-      <label class="field-label" for="access-code">كلمة مرور بيئة التجربة</label>
-      <div class="field">
-        <input
-          id="access-code"
-          name="code"
-          type="password"
-          placeholder="Enter access password..."
-          autocomplete="off"
-          autofocus
-          required
-        />
-        <button type="button" class="toggle-btn" id="toggle-vis" aria-label="إظهار أو إخفاء كلمة المرور">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </button>
-      </div>
+        <label class="consent-row" id="consent-row" for="consent-check">
+          <input id="consent-check" name="accepted" type="checkbox" required />
+          <span class="consent-text">أقرّ بالاطلاع على التنويه أعلاه وأوافق على المتابعة</span>
+        </label>
 
-      <label class="consent-row" id="consent-row" for="consent-check">
-        <input id="consent-check" name="accepted" type="checkbox" required />
-        <span class="consent-text">
-          <strong>أقرّ وأوافق</strong> على أنني أدرك أن هذه المنصة بيئة عرض وتجربة تقنية تابعة لشركة <strong>EraCoda</strong> وليست الموقع الرسمي، وأوافق على المتابعة لغرض التجربة فقط.
-        </span>
-      </label>
+        <button type="submit" class="submit-btn" id="submit-btn" disabled>دخول</button>
+        <div class="err" id="err-msg" role="alert"></div>
+      </form>
+    </main>
 
-      <button type="submit" class="submit-btn" id="submit-btn" disabled>دخول إلى بيئة التجربة</button>
-      <div class="err" id="err-msg" role="alert"></div>
-    </form>
-  </main>
+    <div class="footer-note">Powered by EraCoda · Technical Demo Environment</div>
+  </div>
 
   <script>
     (function () {
@@ -460,7 +384,6 @@ function buildGateHtml(): string {
       function syncButtonState() {
         var hasCode = input.value.trim().length > 0;
         var isChecked = consent.checked;
-        consentRow.classList.toggle("checked", isChecked);
         if (isChecked) {
           consentRow.classList.remove("needs-consent");
         }
@@ -493,7 +416,7 @@ function buildGateHtml(): string {
         }
 
         if (!consent.checked) {
-          err.textContent = "يرجى تفعيل مربع الموافقة على الإقرار أولاً للمتابعة";
+          err.textContent = "يرجى تفعيل مربع الموافقة أولاً للمتابعة";
           consentRow.classList.add("needs-consent");
           consent.focus();
           return;
@@ -522,14 +445,14 @@ function buildGateHtml(): string {
             }
             submitting = false;
             err.textContent = (result.data && result.data.error) || "كلمة المرور غير صحيحة";
-            btn.textContent = "دخول إلى بيئة التجربة";
+            btn.textContent = "دخول";
             syncButtonState();
             input.select();
           })
           .catch(function () {
             submitting = false;
             err.textContent = "تعذر الاتصال بالسيرفر، حاول مرة أخرى";
-            btn.textContent = "دخول إلى بيئة التجربة";
+            btn.textContent = "دخول";
             syncButtonState();
           });
       });
