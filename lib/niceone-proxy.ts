@@ -374,10 +374,14 @@ function buildHostShellHtml(
               ? "en"
               : "ar";
         if (activeLang === "en") {
+          document.documentElement.lang = "en";
+          document.documentElement.dir = "ltr";
           topBar.setAttribute("dir", "ltr");
           topBarText.innerHTML =
             '<strong>Technical Demo</strong> by EraCoda for AI voice assistant preview — Not the official Nice One store. For real shopping visit <a href="https://niceonesa.com/en" target="_blank" rel="noopener noreferrer">niceonesa.com</a>';
         } else {
+          document.documentElement.lang = "ar";
+          document.documentElement.dir = "rtl";
           topBar.setAttribute("dir", "rtl");
           topBarText.innerHTML =
             'هذه <strong>بيئة عرض وتجربة تقنية</strong> من EraCoda لاستعراض المساعد الصوتي، وليست الموقع الرسمي — للتسوق الفعلي: <a href="https://niceonesa.com/ar" target="_blank" rel="noopener noreferrer">niceonesa.com</a>';
@@ -602,10 +606,16 @@ function transformNiceOneHtml(
 ): string {
   let output = html;
 
-  // Rewrite only anchor hrefs pointing to niceonesa.com so we don't corrupt window.__NUXT__.config
+  // Rewrite anchor/link hrefs pointing to niceonesa.com to same-origin relative paths
   output = output.replace(
     /href=(["'])https?:\/\/(?:www\.)?niceonesa\.com(\/[^"']*)?\1/gi,
     (_match, quote, path) => `href=${quote}${path || `/${locale}`}${quote}`,
+  );
+
+  // Rewrite Nuxt i18n baseUrl so the AR/EN language switcher navigates same-origin inside the proxy frame
+  output = output.replace(
+    /baseUrl\s*:\s*(["'])https?:\/\/(?:www\.)?niceonesa\.com\/?\1/gi,
+    "baseUrl:window.location.origin",
   );
 
   const bridgeScript = `
